@@ -1,4 +1,4 @@
-#include "tealeaf.hpp"
+#include "pack_kernel.h"
 
 // ----------------------------------------------------------------------------
 // Helper Macros for Indexing
@@ -15,31 +15,10 @@
 // For this translation, I calculate it assuming standard TeaLeaf layout.
 
 
+using namespace TeaLeaf;
+
 #define GET_IDX(x, y, stride) ((y) * (stride) + (x))
 
-int CHUNK_LEFT   =1    
-    ,CHUNK_RIGHT  =2    
-    ,CHUNK_BOTTOM =3    
-    ,CHUNK_TOP    =4    
-    ,EXTERNAL_FACE=-1;
-
-  int FIELD_DENSITY    = 1        
-    ,FIELD_ENERGY0    = 2         
-    ,FIELD_ENERGY1    = 3         
-    ,FIELD_U          = 4         
-    ,FIELD_P          = 5         
-    ,FIELD_SD         = 6         
-    ,FIELD_R          = 7         
-    ,FIELD_Z          = 8         
-    ,FIELD_KX         = 9         
-    ,FIELD_KY         = 10        
-    ,FIELD_DI         = 11        
-    ,NUM_FIELDS       = 11;
-
-   int CELL_DATA     = 1,        
-        VERTEX_DATA   = 2,       
-        X_FACE_DATA   = 3,       
-        Y_FACE_DATA   = 4;
 
 int yincs(int field_type) {
     if (field_type == VERTEX_DATA || field_type == Y_FACE_DATA) return 1;

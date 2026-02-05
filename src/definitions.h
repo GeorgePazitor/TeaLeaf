@@ -1,8 +1,12 @@
-//#include "tealeaf.hpp"
+#ifndef DEFINITIONS_H
+#define DEFINITIONS_H
 
-namespace Definitions{
+#include <vector>
+#include <array>
 
-    class State_type{
+namespace TeaLeaf {
+
+    struct State_type{
         bool defined;
 
         double density, energy;
@@ -13,7 +17,7 @@ namespace Definitions{
 
     int number_of_states;
 
-    class Grid_type{
+    struct Grid_type{
         double xmin, xmax, ymin, ymax;
 
         int x_cells, y_cells;
@@ -62,7 +66,7 @@ namespace Definitions{
     double corase_solve_max_eps;
     bool coarse_solve_ppcg;
 
-    class Profiler_type{
+    struct Profiler_type{
         double timestep       
                 ,visit           
                 ,summary         
@@ -87,8 +91,9 @@ namespace Definitions{
     int visit_frequency, summary_frequency;
     int jdt, kdt;
 
-    class Field_type{
+    struct Field_type{
 
+        // 2D arrays stored as 1D vectors in row-major order
         std::vector<double> density, 
                             energy0, 
                             energy1, 
@@ -111,14 +116,15 @@ namespace Definitions{
                             row_sums;
 
         std::vector<double> cellx, celly, vertexx, vertexy, celldx, celldy, vertexdx, vertexdy;
-
+        
+        // 2D arrays stored as 1D vectors in row-major order
         std::vector<double> volume, xarea, yarea;
 
         int xmin, xmax, ymin, ymax;
         double rx, ry;
     };
 
-    class Tile_type{
+    struct Tile_type{
 
         Field_type field;
 
@@ -130,7 +136,7 @@ namespace Definitions{
         std::array<int, 2> tile_coords;       
     };
 
-    class Chunk_type{
+    struct Chunk_type{
         int task;
 
         int chunk_x_min, chunk_y_min, chunk_x_max, chunk_y_max;
@@ -139,7 +145,7 @@ namespace Definitions{
 
         int x_cells, y_cells;
 
-        std::array<int, 2> chunk_neighbours;
+        std::array<int, 4> chunk_neighbours;
 
         std::vector<double> left_rcv_buffer, right_rcv_buffer, bottom_rcv_buffer,top_rcv_buffer;
         std::vector<double> left_snd_buffer, right_snd_buffer, bottom_snd_buffer,top_snd_buffer;
@@ -157,3 +163,5 @@ namespace Definitions{
 
     Grid_type grid;
 }
+
+#endif

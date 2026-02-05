@@ -1,4 +1,7 @@
-#include "tealeaf.hpp"
+#include "packing.h"
+
+using namespace TeaLeaf;
+
 void call_packing_functions(int* fields, int depth, int face, bool packing, double* mpi_buffer, int* offsets);
 
 void tea_pack_buffers(int* fields, int depth, int face, double* mpi_buffer, int* offsets) {
