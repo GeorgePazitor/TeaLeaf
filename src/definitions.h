@@ -120,7 +120,7 @@ namespace TeaLeaf {
         // 2D arrays stored as 1D vectors in row-major order
         std::vector<double> volume, xarea, yarea;
 
-        int xmin, xmax, ymin, ymax;
+        int x_min, x_max, y_min, y_max;
         double rx, ry;
     };
 
@@ -132,8 +132,8 @@ namespace TeaLeaf {
 
         int x_cells, y_cells;
 
-        std::array<int, 2> tile_neighbours;
-        std::array<int, 2> tile_coords;       
+        std::array<int, 4> tile_neighbours; 
+        std::array<int, 4> tile_coords;       
     };
 
     struct Chunk_type{
@@ -145,7 +145,7 @@ namespace TeaLeaf {
 
         int x_cells, y_cells;
 
-        std::array<int, 4> chunk_neighbours;
+        int chunk_neighbours[4];
 
         std::vector<double> left_rcv_buffer, right_rcv_buffer, bottom_rcv_buffer,top_rcv_buffer;
         std::vector<double> left_snd_buffer, right_snd_buffer, bottom_snd_buffer,top_snd_buffer;

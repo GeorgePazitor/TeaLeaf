@@ -13,6 +13,8 @@
 // We approximate stride based on x_min/x_max + halo. 
 // A safer way is to pass the 'stride' explicitly from the calling code.
 // For this translation, I calculate it assuming standard TeaLeaf layout.
+#include <vector>
+#include <array>
 #include "data.h"
 #define GET_IDX(x, y, stride) ((y) * (stride) + (x))
 
@@ -24,31 +26,31 @@ int xincs(int field_type);
 // Function Pointer Type Definition
 typedef void (*pack_func_t)(
     int x_min, int x_max, int y_min, int y_max, int halo_exchange_depth,
-    double* field, double* buffer,
+    std::vector<double>& field, std::vector<double>& buffer,
     int depth, int x_inc, int y_inc,
     int buffer_offset, int edge_minus, int edge_plus
 );
 
 // Forward declarations of specific kernels
-void tea_pack_message_left(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
-void tea_unpack_message_left(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
-void tea_pack_message_right(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
-void tea_unpack_message_right(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
-void tea_pack_message_top(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
-void tea_unpack_message_top(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
-void tea_pack_message_bottom(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
-void tea_unpack_message_bottom(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
+void tea_pack_message_left(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
+void tea_unpack_message_left(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
+void tea_pack_message_right(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
+void tea_unpack_message_right(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
+void tea_pack_message_top(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
+void tea_unpack_message_top(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
+void tea_pack_message_bottom(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
+void tea_unpack_message_bottom(int, int, int, int, int, std::vector<double>&, std::vector<double>&, int, int, int, int, int, int);
 
 // Main Dispatcher
 
 void pack_all(
     int x_min, int x_max, int y_min, int y_max, int halo_exchange_depth,
-    int* tile_neighbours,
-    double* density, double* energy0, double* energy1,
-    double* u, double* p, double* sd,
-    double* r, double* z, double* kx, double* ky, double* di,
+    const std::array<int, 4> tile_neighbours,
+    std::vector<double>& density, std::vector<double>& energy0, std::vector<double>& energy1,
+    std::vector<double>& u, std::vector<double>& p, std::vector<double>& sd,
+    std::vector<double>& r, std::vector<double>& z, std::vector<double>& kx, std::vector<double>& ky, std::vector<double>& di,
     int* fields, int depth, int face, bool packing, 
-    double* mpi_buffer, int* offsets, int tile_offset
+    std::vector<double>& mpi_buffer, int* offsets, int tile_offset
 );
 
 #endif

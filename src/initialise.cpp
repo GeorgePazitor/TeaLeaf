@@ -1,5 +1,5 @@
 #include <initialise.h>
-
+using namespace TeaLeaf;
 // Forward declarations of functions likely in other modules
 void read_input(); 
 void start();
