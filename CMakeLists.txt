@@ -3,13 +3,12 @@ project(TeaLeaf)
 
 # Define variables
 set( headers
-    src/definitions.hpp
+    src/definitions.h
     
 )
 
 set( sources
-    src/definitions.hpp
-    
+    src/definitions.cpp
 )
 
 # create library (not yet executable)

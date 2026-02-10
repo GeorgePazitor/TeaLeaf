@@ -7,10 +7,10 @@
 //#include <mpi.h>
 #include <omp.h>
 #include "data.h"
+#include "start.h"
 
 // Forward declarations of functions likely in other modules
 void read_input(); 
-void start();
 
 std::ofstream g_file_stream;
 

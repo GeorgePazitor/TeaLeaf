@@ -2,7 +2,6 @@
 using namespace TeaLeaf;
 // Forward declarations of functions likely in other modules
 void read_input(); 
-void start();
 
 // Global stream definitions
 std::ofstream g_file_stream;
