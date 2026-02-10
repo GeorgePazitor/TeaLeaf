@@ -73,8 +73,8 @@ namespace TeaLeaf {
 
     // Global Variable Declarations (Extern)
 
-    extern int g_in;
-    extern int g_out;
+    //extern int g_in; file 
+    extern std::ostream* g_out;
 
     extern parallel_type parallel;
 

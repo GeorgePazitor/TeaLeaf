@@ -4,4 +4,4 @@ In future developements consider that :
 // no parse module - logic is integrated into initialise.cpp for simplicity
 
 
-//fix pack data()
+// fix g_out and input file stream to be the same for all the initialisation and reading parts 

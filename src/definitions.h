@@ -15,6 +15,8 @@ namespace TeaLeaf {
 
     };
 
+    std::vector<State_type> states;
+
     int number_of_states;
 
     struct Grid_type{

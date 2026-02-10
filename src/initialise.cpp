@@ -5,7 +5,6 @@ void read_input();
 void start();
 
 // Global stream definitions
-std::ostream* g_out_stream = &std::cout;
 std::ofstream g_file_stream;
 
 // Helper to check file existence
@@ -52,11 +51,11 @@ void initialise() {
             std::cerr <<"initialise" << "Error opening tea.out file.";
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
-        g_out_stream = &g_file_stream;
+        g_out = &g_file_stream;
     } else {
         // Non-boss ranks write to null or stdout
         // Usually in MPI we silence non-root ranks or let them print to stdout.
-        g_out_stream = &std::cout; 
+        g_out = &std::cout; 
     }
 
     #pragma omp parallel
@@ -65,22 +64,14 @@ void initialise() {
         #pragma omp master
         {
             if (parallel.boss) {
-                *g_out_stream << "\n";
-                *g_out_stream << "Tea Version      " << g_version << "\n";
-                *g_out_stream << "MPI Version\n";
-                
-                #ifdef OMP
-                *g_out_stream << "OpenMP Version\n";
-                #endif
-
-                *g_out_stream << "Task Count       " << parallel.max_task << "\n";
-                
-                #ifdef OMP
-                *g_out_stream << "Thread Count:    " << omp_get_num_threads() << "\n";
-                #endif
-
-                *g_out_stream << "\n";
-                *g_out_stream << "Output file tea.out opened. All output will go there." << std::endl;
+                *g_out << "\n";
+                *g_out << "Tea Version      " << g_version << "\n";
+                *g_out << "MPI Version\n";                
+                *g_out << "OpenMP Version\n";
+                *g_out << "Task Count       " << parallel.max_task << "\n";                
+                *g_out << "Thread Count:    " << omp_get_num_threads() << "\n";
+                *g_out << "\n";
+                *g_out << "Output file tea.out opened. All output will go there." << std::endl;
             }
         }
     }
@@ -88,7 +79,7 @@ void initialise() {
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (parallel.boss) {
-        *g_out_stream << "Tea will run from the following input:-\n\n";
+        *g_out << "Tea will run from the following input:-\n\n";
     }
 
     if (parallel.boss) {
@@ -137,13 +128,13 @@ void initialise() {
         if (uin.is_open()) {
             std::string ltmp;
             while (std::getline(uin, ltmp)) {
-                *g_out_stream << ltmp << "\n";
+                *g_out << ltmp << "\n";
             }
         }
     }
 
     if (parallel.boss) {
-        *g_out_stream << "\nInitialising and generating\n\n";
+        *g_out << "\nInitialising and generating\n\n";
     }
 
     // 
@@ -163,7 +154,7 @@ void initialise() {
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (parallel.boss) {
-        *g_out_stream << "Starting the calculation\n";
+        *g_out << "Starting the calculation\n";
     }
 
 }
