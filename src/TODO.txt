@@ -5,3 +5,67 @@ In future developements consider that :
 
 
 // fix g_out and input file stream to be the same for all the initialisation and reading parts 
+
+--
+
+For the moment and because we haven't much time, I suggest we should only implement Jacobi, which is the simplest method.
+I tried to identify all the dependencies we need to keep in mind while implementing the diffusion part.
+Here are my findings (Assuming "-->" means there is a dependancy): 
+
+• diffuse.cpp (TeaLeaf's main loop : handle time + solvers + outputs)
+    --> tea.cpp : call tea_finalize() // ALREADY IMPLEMENTED
+	  --> timestep.cpp : call timestep()
+	  --> tea_solve.cpp : call tea_leaf()
+	  --> field_summary.cpp : call field_summary()
+	  --> visit.cpp : call visit()
+	  --> global_mpi.cpp : call tea_allgather()
+
+• timestep.cpp (To handle timestep)
+    --> tea.cpp // ALREADY IMPLEMENTED
+		--> definitions.cpp // ALREADY IMPLEMENTED
+		--> global_mpi.cpp : call tea_min() // ALREADY MENTIONNED
+		--> update_halo.cpp
+		--> calc_dt.cpp : call calc_dt()
+
+• update_halo.cpp (To handle ghost cells)
+    --> kernel/update_halo_kernel.cpp // TO BE IMPLEMENTED
+	  --> kernel/update_internal_halo_kernel.cpp // TO BE IMPLEMENTED
+
+• tea_leaf.cpp (Aka. tea_solve, to handle the solvers)  
+		--> global_mpi.cpp : call tea_allsum // ALREADY MENTIONNED
+		--> update_halo.cpp : call update_halo // ALREADY MENTIONNED
+    --> tea_leaf_jacobi.cpp : call tea_leaf_jacobi_solve()
+		--> tea_leaf_common.cpp : tea_leaf_init_common(), tea_leaf_calc_residual(), tea_leaf_calc_2norm(), tea_leaf_finalise()
+
+• tea_leaf_jacobi.cpp (To handle more specifically the jacobi solver)
+    --> kernel/tea_leaf_jacobi_kernel.cpp : tea_leaf_jacobi_solve_kernel // TO BE IMPLEMENTED
+
+• tea_leaf_common.cpp (To handle common functions & features)
+    --> kernel/tea_leaf_common.cpp : tea_leaf_common_init_kernel(), tea_leaf_calc_residual_kernel(), tea_leaf_calc_2norm_kernel(), tea_leaf_kernel_finalise() // TO BE IMPLEMENTED
+
+• field_summary.cpp
+    --> kernel/field_summary_kernel.cpp : call field_summary_kernel() // TO BE IMPLEMENTED
+		--> global_mpi.f90 : call tea_sum() // ALREADY MENTIONNED
+
+• global_mpi.cpp 
+    --> definitions.cpp // ALREADY IMPLEMEBTED
+
+• visit.cpp 
+    --> update_halo.cpp // ALREADY IMPLEMENTED
+    --> tea.cpp // ALREADY IMPLEMENTED
+
+To conclude, it means we should now implement the following features :
+- diffuse.cpp
+- timestep.cpp
+- update_halo.cpp
+  - kernel/update_halo_kernel.cpp
+  - kernel/update_internal_halo_kernel.cpp
+- tea_leaf.cpp
+- tea_leaf_jacobi.cpp
+  - kernel/tea_leaf_jacobi_kernel.cpp
+- tea_leaf_common.cpp
+  - kernel/tea_leaf_common.cpp
+- field_summary.cpp
+  - kernel/field_summary_kernel.cpp
+- global_mpi.cpp
+- visit.cpp
