@@ -1,5 +1,6 @@
-#ifndef PACK_KERNEL_H
-#define PACK_KERNEL_H
+#pragma once
+//using namespace TeaLeaf;
+
 // ----------------------------------------------------------------------------
 // Helper Macros for Indexing
 // ----------------------------------------------------------------------------
@@ -41,7 +42,6 @@ void tea_unpack_message_top(int, int, int, int, int, double*, double*, int, int,
 void tea_pack_message_bottom(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
 void tea_unpack_message_bottom(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
 
-// Main Dispatcher
 
 void pack_all(
     int x_min, int x_max, int y_min, int y_max, int halo_exchange_depth,
@@ -49,8 +49,7 @@ void pack_all(
     double* density, double* energy0, double* energy1,
     double* u, double* p, double* sd,
     double* r, double* z, double* kx, double* ky, double* di,
-    int* fields, int depth, int face, bool packing, 
+    const int* fields, int depth, int face, bool packing, 
     double* mpi_buffer, int* offsets, int tile_offset
 );
 
-#endif

@@ -1,4 +1,18 @@
 #include "read_input.h"
+
+#include "tea.h"
+#include "data.h"
+#include "definitions.h"
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <omp.h>
+
 using namespace TeaLeaf;
 
 class InputParser {
@@ -54,7 +68,7 @@ public:
 };
 
 void read_input() {
-    using namespace TeaLeaf; 
+    //using namespace TeaLeaf; 
     
     test_problem = 0;
     int state_max = 0;
@@ -92,9 +106,7 @@ void read_input() {
     {
         #pragma omp master
         {
-            #ifdef _OPENMP
             tiles_per_task = omp_get_num_threads();
-            #endif
         }
     }
 

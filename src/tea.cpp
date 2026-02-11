@@ -1,4 +1,9 @@
 #include "tea.h"
+#include "data.h"
+#include "definitions.h"
+#include "pack.h"
+
+#include <vector>
 
 
 using namespace TeaLeaf;
@@ -241,7 +246,7 @@ void tea_allocate_buffers() {
 
 
 
-void tea_exchange(const std::vector<int>& fields, int depth) {
+void tea_exchange(const int* fields, int depth) {
     // halo exchange driver
 
     // Check if fully isolated (no neighbors)
@@ -282,7 +287,7 @@ void tea_exchange(const std::vector<int>& fields, int depth) {
 
     if (chunk.chunk_neighbours[CHUNK_LEFT] != EXTERNAL_FACE) {
         // Pack
-        tea_pack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_LEFT, chunk.left_snd_buffer.data(), offsets_lr.data());
+        tea_pack_buffers(fields, depth, CHUNK_LEFT, chunk.left_snd_buffer.data(), offsets_lr.data());
         
         // Send/Recv
         tea_send_recv_message_left(chunk.left_snd_buffer.data(), chunk.left_rcv_buffer.data(),
@@ -293,7 +298,7 @@ void tea_exchange(const std::vector<int>& fields, int depth) {
 
     if (chunk.chunk_neighbours[CHUNK_RIGHT] != EXTERNAL_FACE) {
         // Pack
-        tea_pack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_RIGHT, chunk.right_snd_buffer.data(), offsets_lr.data());
+        tea_pack_buffers(fields, depth, CHUNK_RIGHT, chunk.right_snd_buffer.data(), offsets_lr.data());
         
         // Send/Recv
         tea_send_recv_message_right(chunk.right_snd_buffer.data(), chunk.right_rcv_buffer.data(),
@@ -316,17 +321,17 @@ void tea_exchange(const std::vector<int>& fields, int depth) {
 
     // Unpack Left/Right
     if (chunk.chunk_neighbours[CHUNK_LEFT] != EXTERNAL_FACE) {
-        tea_unpack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_LEFT, chunk.left_rcv_buffer.data(), offsets_lr.data());
+        tea_unpack_buffers(fields, depth, CHUNK_LEFT, chunk.left_rcv_buffer.data(), offsets_lr.data());
     }
     if (chunk.chunk_neighbours[CHUNK_RIGHT] != EXTERNAL_FACE) {
-        tea_unpack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_RIGHT, chunk.right_rcv_buffer.data(), offsets_lr.data());
+        tea_unpack_buffers(fields, depth, CHUNK_RIGHT, chunk.right_rcv_buffer.data(), offsets_lr.data());
     }
 
     // --- Top/Bottom Phase ---
 
     if (chunk.chunk_neighbours[CHUNK_BOTTOM] != EXTERNAL_FACE) {
-        tea_pack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_BOTTOM, chunk.bottom_snd_buffer.data(), offsets_ud.data());
-
+        tea_pack_buffers(fields, depth, CHUNK_BOTTOM, chunk.bottom_snd_buffer.data(), offsets_ud.data());
+        
         tea_send_recv_message_bottom(chunk.bottom_snd_buffer.data(), chunk.bottom_rcv_buffer.data(),
                                      end_pack_idx_ud, 3, 4,
                                      &request_ud[msg_count_ud], &request_ud[msg_count_ud+1]);
@@ -334,7 +339,7 @@ void tea_exchange(const std::vector<int>& fields, int depth) {
     }
 
     if (chunk.chunk_neighbours[CHUNK_TOP] != EXTERNAL_FACE) {
-        tea_pack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_TOP, chunk.top_snd_buffer.data(), offsets_ud.data());
+        tea_pack_buffers(fields, depth, CHUNK_TOP, chunk.top_snd_buffer.data(), offsets_ud.data());
 
         tea_send_recv_message_top(chunk.top_snd_buffer.data(), chunk.top_rcv_buffer.data(),
                                   end_pack_idx_ud, 4, 3,
@@ -347,10 +352,10 @@ void tea_exchange(const std::vector<int>& fields, int depth) {
 
     // Unpack Top/Bottom
     if (chunk.chunk_neighbours[CHUNK_TOP] != EXTERNAL_FACE) {
-        tea_unpack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_TOP, chunk.top_rcv_buffer.data(), offsets_ud.data());
+        tea_unpack_buffers(fields, depth, CHUNK_TOP, chunk.top_rcv_buffer.data(), offsets_ud.data());
     }
     if (chunk.chunk_neighbours[CHUNK_BOTTOM] != EXTERNAL_FACE) {
-        tea_unpack_buffers(const_cast<int*>(fields.data()), depth, CHUNK_BOTTOM, chunk.bottom_rcv_buffer.data(), offsets_ud.data());
+        tea_unpack_buffers(fields, depth, CHUNK_BOTTOM, chunk.bottom_rcv_buffer.data(), offsets_ud.data());
     }
 }
 

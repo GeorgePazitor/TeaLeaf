@@ -1,10 +1,16 @@
-#include <initialise.h>
-using namespace TeaLeaf;
-// Forward declarations of functions likely in other modules
-void read_input(); 
-void start();
+#include "initialise.h"
 
-// Global stream definitions
+#include <iostream>
+#include <fstream>
+//#include <mpi.h>
+#include <omp.h>
+
+#include "data.h"
+#include "definitions.h"
+#include "read_input.h"
+#include "start.h"
+
+
 std::ofstream g_file_stream;
 
 // Helper to check file existence
@@ -44,7 +50,8 @@ void clean_input_file(const std::string& input_file, const std::string& output_f
 }
 
 void initialise() {
-    
+    using namespace TeaLeaf;
+
     if (parallel.boss) {
         g_file_stream.open("tea.out");
         if (!g_file_stream.is_open()) {
@@ -144,9 +151,7 @@ void initialise() {
     read_input();
 
     MPI_Barrier(MPI_COMM_WORLD);
-
-    // Assuming 'step' is a global int defined in data.h
-    extern int step; 
+ 
     step = 0;
 
     start();

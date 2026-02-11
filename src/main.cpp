@@ -18,8 +18,8 @@ int main(int argc, char** argv){
             if(omp_get_thread_num() == 0){
                 std::cout << "\n";
                 std::cout << "\nTea Version: " << g_version;
-                std::cout << "\nMPI Version: ";
-                std::cout << "OpenMP Version";
+                std::cout << "\nMPI Version: \n";
+                std::cout << "OpenMP Version. \n";
                 std::cout << "\nTask Count: " << parallel.max_task ;
                 std::cout << "Thread Count: " << omp_get_num_threads() ;
             }
@@ -27,10 +27,9 @@ int main(int argc, char** argv){
      
     }
     
-
   initialise();
 
-  diffuse();
+  //diffuse();
 
 //Deallocate everything
 

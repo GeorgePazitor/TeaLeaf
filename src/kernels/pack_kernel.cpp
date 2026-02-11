@@ -1,5 +1,5 @@
 #include "pack_kernel.h"
-
+using namespace TeaLeaf;
 // ----------------------------------------------------------------------------
 // Helper Macros for Indexing
 // ----------------------------------------------------------------------------
@@ -15,17 +15,20 @@
 // For this translation, I calculate it assuming standard TeaLeaf layout.
 
 
-using namespace TeaLeaf;
 
 #define GET_IDX(x, y, stride) ((y) * (stride) + (x))
 
 
 int yincs(int field_type) {
+    using namespace TeaLeaf;
+
     if (field_type == VERTEX_DATA || field_type == Y_FACE_DATA) return 1;
     return 0;
 }
 
 int xincs(int field_type) {
+    using namespace TeaLeaf;
+
     if (field_type == VERTEX_DATA || field_type == X_FACE_DATA) return 1;
     return 0;
 }
@@ -58,9 +61,11 @@ void pack_all(
     double* density, double* energy0, double* energy1,
     double* u, double* p, double* sd,
     double* r, double* z, double* kx, double* ky, double* di,
-    int* fields, int depth, int face, bool packing, 
+    const int* fields, int depth, int face, bool packing, 
     double* mpi_buffer, int* offsets, int tile_offset
 ) {
+    
+
     int edge_minus = 0;
     int edge_plus = 0;
     pack_func_t pack_func = nullptr;
@@ -160,9 +165,6 @@ void pack_all(
     #endif
 }
 
-// ----------------------------------------------------------------------------
-// Implementations of Specific Kernels
-// ----------------------------------------------------------------------------
 
 void tea_pack_message_left(int x_min, int x_max, int y_min, int y_max, int halo, double* field, double* buf, int depth, int x_inc, int y_inc, int buf_off, int e_minus, int e_plus) {
     int stride = (x_max + halo) - (x_min - halo) + 1; 
@@ -171,7 +173,7 @@ void tea_pack_message_left(int x_min, int x_max, int y_min, int y_max, int halo,
     for (int k = y_min - e_minus; k <= y_max + y_inc + e_plus; ++k) {
         for (int j = 1; j <= depth; ++j) {
             int index = buf_off + j + (k + depth - 1) * depth; 
-            // Fortran: field(x_min+x_inc-1+j, k)
+            // fortran: field(x_min+x_inc-1+j, k)
             // C++ Adjustment required for 0-based indexing if k/j are 1-based logic
             buf[index - 1] = field[GET_IDX(x_min + x_inc - 1 + j, k, stride)]; 
         }

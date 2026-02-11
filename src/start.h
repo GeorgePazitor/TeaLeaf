@@ -1,3 +1,4 @@
-#include "tea.h"
+#pragma once
 
+#include <cmath>
 void start();

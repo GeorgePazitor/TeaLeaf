@@ -1,5 +1,4 @@
-#ifndef DATA_H
-#define DATA_H
+#pragma once
 
 #include <mpi.h>
 
@@ -14,14 +13,13 @@ namespace TeaLeaf {
     constexpr int g_xdir         = 1;
     constexpr int g_ydir         = 2;
 
-    // Neighbors / Halo Faces (Converted to 0-based)
+    // halo Faces 
     constexpr int CHUNK_LEFT    = 0;
     constexpr int CHUNK_RIGHT   = 1;
     constexpr int CHUNK_BOTTOM  = 2;
     constexpr int CHUNK_TOP     = 3;
     constexpr int EXTERNAL_FACE = -1;
 
-    // Field Indices (Converted to 0-based)
     constexpr int FIELD_DENSITY = 0;
     constexpr int FIELD_ENERGY0 = 1;
     constexpr int FIELD_ENERGY1 = 2;
@@ -35,35 +33,28 @@ namespace TeaLeaf {
     constexpr int FIELD_DI      = 10;
     constexpr int NUM_FIELDS    = 11; // pr 10 idk, in the source code it's the same as FIELD_DI
 
-    // Data Locations (Converted to 0-based for consistency, though these act as Enums)
     constexpr int CELL_DATA   = 0;
     constexpr int VERTEX_DATA = 1;
     constexpr int X_FACE_DATA = 2;
     constexpr int Y_FACE_DATA = 3;
 
-    // Time step control constants
+    // time step control constants
     constexpr int FIXED = 1;
 
-    // Geometry types
     constexpr int g_rect  = 1;
     constexpr int g_circ  = 2;
     constexpr int g_point = 3;
 
-    // Solver Options
     constexpr int CONDUCTIVITY       = 1;
     constexpr int RECIP_CONDUCTIVITY = 2;
 
-    // Preconditioners
     constexpr int TL_PREC_NONE      = 1;
     constexpr int TL_PREC_JAC_DIAG  = 2;
     constexpr int TL_PREC_JAC_BLOCK = 3;
 
     constexpr int g_len_max = 500;
 
-
-    // Structures
-
-    struct parallel_type {
+    struct Parallel_type {
         bool boss;
         int max_task;
         int boss_task;
@@ -71,12 +62,10 @@ namespace TeaLeaf {
 
     };
 
-    // Global Variable Declarations (Extern)
-
     //extern int g_in; file 
     extern std::ostream* g_out;
 
-    extern parallel_type parallel;
+    //extern Parallel_type parallel;
 
     extern int tiles_per_task;
     extern int sub_tiles_per_tile;
@@ -85,5 +74,6 @@ namespace TeaLeaf {
 
     extern int mpi_dims[2];
     extern int mpi_coords[2];
+
+    extern Parallel_type parallel;
 };
-#endif

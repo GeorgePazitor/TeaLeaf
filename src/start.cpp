@@ -1,10 +1,21 @@
+#include "start.h"
 #include "tea.h"
+#include "data.h"
+#include "definitions.h"
+#include "global_mpi.h"
+#include "build_field.h"
+#include "initialise_chunk.h"
+#include "generate_chunk.h"
+#include "update_halo.h"
+#include "set_field.h"
+#include "field_summary.h"
 
-using namespace TeaLeaf;
 
 void start() {
+    using namespace TeaLeaf;
+
     int t;
-    int fields[NUM_FIELDS] = {0};
+    std::array<int, NUM_FIELDS> fields = {0};
 
     //bool profiler_original;
 
@@ -20,7 +31,7 @@ void start() {
     step = 0;
     dt = dtinit;
 
-    tea_barrier(); //TODO
+    tea_barrier(); 
 
     tea_decompose(grid.x_cells, grid.y_cells);
 
@@ -50,16 +61,16 @@ void start() {
     if(parallel.boss){
         *g_out << "Tile size "<<chunk.tiles[0].x_cells<<" by "<<chunk.tiles[0].y_cells<<" cells \n";
 
-        *g_out << "Sub-tile size ranges from "  << chunk.tiles[tiles_per_task].x_cells / double(chunk.sub_tile_dims[0]) << " by " 
-                                                << chunk.tiles[tiles_per_task].y_cells / double(chunk.sub_tile_dims[1]) << " cells to" 
-                                                << chunk.tiles[0].x_cells / double(chunk.sub_tile_dims[0]) << " by "
-                                                << chunk.tiles[0].y_cells / double(chunk.sub_tile_dims[1]) << " cells \n";
+        *g_out << "Sub-tile size ranges from "  << std::floor((double)chunk.tiles[tiles_per_task].x_cells / (double)chunk.sub_tile_dims[0]) << " by " 
+                                                << std::floor((double)chunk.tiles[tiles_per_task].y_cells / (double)chunk.sub_tile_dims[1]) << " cells to" 
+                                                << std::ceil((double)chunk.tiles[0].x_cells / (double)chunk.sub_tile_dims[0]) << " by "
+                                                << std::ceil((double)chunk.tiles[0].y_cells / (double)chunk.sub_tile_dims[1]) << " cells \n";
                                                
     }
 
-    build_field(); //TODO
+    build_field(); 
     tea_allocate_buffers();
-    initialise_chunk(); //TODO
+    initialise_chunk(); 
 
     if(parallel.boss){
         *g_out << " Generating chunk \n";
@@ -69,13 +80,13 @@ void start() {
     grid.x_cells = mpi_dims[0] * chunk.tile_dims[0] * chunk.sub_tile_dims[0];
     grid.y_cells = mpi_dims[1] * chunk.tile_dims[1] * chunk.sub_tile_dims[1];
 
-    generate_chunk(); //TODO
+    generate_chunk(); 
 
     fields[FIELD_DENSITY] = 1;
     fields[FIELD_ENERGY0] = 1;
     fields[FIELD_ENERGY1] = 1;
 
-    halo_update(fields, chunk.halo_exchange_depth); //TODO
+    update_halo(fields.data(), chunk.halo_exchange_depth); 
 
     if(parallel.boss){
         *g_out << " \n Problem initialized and generated \n";
