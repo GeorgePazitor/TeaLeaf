@@ -1,4 +1,0 @@
-/home/ipixic/mpna/project/implem/TeaLeaf/build/CMakeFiles/tealeaf_lib.dir
-/home/ipixic/mpna/project/implem/TeaLeaf/build/CMakeFiles/tealeaf.dir
-/home/ipixic/mpna/project/implem/TeaLeaf/build/CMakeFiles/edit_cache.dir
-/home/ipixic/mpna/project/implem/TeaLeaf/build/CMakeFiles/rebuild_cache.dir
