@@ -39,21 +39,25 @@ void call_packing_functions(const int* fields, int depth, int face, bool packing
                     tile_offset = (chunk.tiles[t].left - chunk.left) * depth;
                     
                     if (tile_offset != 0) {
-                        tile_offset = tile_offset + (depth * depth);
+                        tile_offset += (depth * depth);
                     }
                     break;
                 
                 default:
-                    // TODO unify the error handling 
-                    fprintf(stderr, "In pack_module.cpp : Invalid face passed to buffer packing");
-                    std::exit(1);
+                    #pragma omp critical
+                    {
+                        fprintf(stderr, "In pack_module.cpp : Invalid face passed to buffer packing\n");
+                        std::exit(1);
+                    }
             }
 
-            //skip if no neighbour in this direction
-            if (chunk.tiles[t].tile_neighbours[face] == EXTERNAL_FACE) {
+            // 2. IMPORTANT : Vérification du voisin (Logique Fortran)
+            // On ne pack/unpack QUE si la tuile est sur une frontière MPI
+            if (chunk.tiles[t].tile_neighbours[face] != EXTERNAL_FACE) {
                 continue; 
             }
 
+            // 3. Appel du Kernel avec .data()
             pack_all(
                 chunk.tiles[t].field.x_min,
                 chunk.tiles[t].field.x_max,
@@ -83,3 +87,5 @@ void call_packing_functions(const int* fields, int depth, int face, bool packing
         }
     }
 }
+
+} // namespace TeaLeaf

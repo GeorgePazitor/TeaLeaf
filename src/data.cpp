@@ -13,7 +13,6 @@ namespace TeaLeaf {
     int sub_tiles_per_tile;
     MPI_Comm mpi_cart_comm;
 
-    int mpi_dims[2];
-    int mpi_coords[2];
-
-}
+    int mpi_dims[2] = {0, 0};
+    int mpi_coords[2] = {0, 0};
+};

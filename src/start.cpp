@@ -26,32 +26,28 @@ void start() {
     if(parallel.boss){
         *g_out << "Setting up initial geometry" << "\n";
     }
-
-    timee = 0;
+    time = 0.0;
     step = 0;
     dt = dtinit;
 
     tea_barrier(); 
 
     tea_decompose(grid.x_cells, grid.y_cells);
-
-    chunk.tiles.resize(tiles_per_task);
-
-    chunk.x_cells = chunk.right - chunk.left;
-    chunk.y_cells = chunk.top - chunk.bottom;
-
+    // Allocation des tuiles
+    // tiles_per_task doit être calculé par tea_decompose
+    chunk.tiles.resize(tiles_per_task); 
+    // Calcul de la taille du chunk (sous-grille locale au processus)
+    chunk.x_cells = chunk.right - chunk.left + 1;
+    chunk.y_cells = chunk.top - chunk.bottom + 1;
     chunk.chunk_x_min = 1;
     chunk.chunk_y_min = 1;
-
     chunk.chunk_x_max = chunk.x_cells;
     chunk.chunk_y_max = chunk.y_cells;
-
+    // Décomposition en tuiles à l'intérieur du chunk
     tea_decompose_tiles(chunk.x_cells, chunk.y_cells);
-
-    for (t = 0; t< tiles_per_task; t++){
-        chunk.tiles[t].x_cells = chunk.tiles[t].right - chunk.tiles[t].left;
-        chunk.tiles[t].y_cells = chunk.tiles[t].top - chunk.tiles[t].bottom;
-
+    for (int t = 0; t < tiles_per_task; ++t) {
+        chunk.tiles[t].x_cells = chunk.tiles[t].right - chunk.tiles[t].left + 1;
+        chunk.tiles[t].y_cells = chunk.tiles[t].top - chunk.tiles[t].bottom + 1;
         chunk.tiles[t].field.x_min = 1;
         chunk.tiles[t].field.y_min = 1;
         chunk.tiles[t].field.x_max = chunk.tiles[t].x_cells;
@@ -76,7 +72,7 @@ void start() {
         *g_out << " Generating chunk \n";
 
     }
-
+    // Recalcul des dimensions globales de la grille
     grid.x_cells = mpi_dims[0] * chunk.tile_dims[0] * chunk.sub_tile_dims[0];
     grid.y_cells = mpi_dims[1] * chunk.tile_dims[1] * chunk.sub_tile_dims[1];
 
@@ -91,15 +87,12 @@ void start() {
     if(parallel.boss){
         *g_out << " \n Problem initialized and generated \n";
     }
-
-    set_field(); //TODO
-
-    field_summary(); //TODO
-
-    //if (visit_frequency != 0) visit();
-
+    set_field();             // Copie energy0 vers energy1
+    field_summary();         // Calcule la masse/énergie totale initiale
+    if (visit_frequency != 0) {
+        visit();             // Sortie fichier pour visualisation
+    }
     tea_barrier();
-
-    //profiler_on=profiler_original
-
-}   
+    profiler_on = profiler_original;
+}
+}

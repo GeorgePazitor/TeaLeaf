@@ -1,6 +1,8 @@
 #pragma once
 
 #include <mpi.h>
+#include <iostream>
+#include <vector>
 
 namespace TeaLeaf {
     constexpr double g_version = 0.1;
@@ -69,9 +71,7 @@ namespace TeaLeaf {
 
     extern int tiles_per_task;
     extern int sub_tiles_per_tile;
-
     extern MPI_Comm mpi_cart_comm;
-
     extern int mpi_dims[2];
     extern int mpi_coords[2];
 
