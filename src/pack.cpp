@@ -87,5 +87,3 @@ void call_packing_functions(const int* fields, int depth, int face, bool packing
         }
     }
 }
-
-} // namespace TeaLeaf

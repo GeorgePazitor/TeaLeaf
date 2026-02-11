@@ -2,11 +2,10 @@
 #include "data.h"
 #include "definitions.h"
 #include "pack.h"
-
+#include <algorithm>
 #include <vector>
 
-namespace TeaLeaf {
-    
+using namespace TeaLeaf;    
 void tea_init_comms() {
     int err, rank, size;
     int periodic[2] = {0, 0};
@@ -38,6 +37,9 @@ void tea_decompose(int x_cells, int y_cells) {
     
     // Décalages pour trouver les voisins (Shift)
     // Direction 1 (Y en Fortran), Direction 0 (X en Fortran)
+
+    // QUESTION - why is it not the contrary? 
+
     MPI_Cart_shift(mpi_cart_comm, 1, 1, 
                    &chunk.chunk_neighbours[CHUNK_BOTTOM], 
                    &chunk.chunk_neighbours[CHUNK_TOP]);
@@ -139,7 +141,7 @@ void tea_decompose_tiles(int x_cells, int y_cells) {
             if (k < mod_y) chunk.tiles[t].top++;
 
             // Voisins des tiles
-            std::fill(chunk.tiles[t].tile_neighbours, chunk.tiles[t].tile_neighbours + 4, EXTERNAL_FACE);
+            std::fill(chunk.tiles[t].tile_neighbours.begin(), chunk.tiles[t].tile_neighbours.end(), EXTERNAL_FACE);
             
             if (j > 0)           chunk.tiles[t].tile_neighbours[CHUNK_LEFT]   = (j - 1) * tiles_y + k;
             if (j < tiles_x - 1) chunk.tiles[t].tile_neighbours[CHUNK_RIGHT]  = (j + 1) * tiles_y + k;
@@ -176,15 +178,9 @@ void tea_allocate_buffers() {
 
 
 
-void tea_exchange(const int* fields, int depth) {
-    // halo exchange driver
-
-    // Check if fully isolated (no neighbors)
-    bool isolated = true;
-    for(int i=0; i<4; ++i) {
-        if(chunk.chunk_neighbours[i] != EXTERNAL_FACE) isolated = false;
-    }
-    if (isolated) return;
+void tea_exchange(const int* fields, int depth) {bool no_neighbours = true;
+    for(int i=0; i<4; ++i) if(chunk.chunk_neighbours[i] != EXTERNAL_FACE) no_neighbours = false;
+    if (no_neighbours) return;
 
     int exchange_size_lr = depth * (chunk.y_cells + 2 * depth);
     int exchange_size_ud = depth * (chunk.x_cells + 2 * depth);
@@ -207,76 +203,50 @@ void tea_exchange(const int* fields, int depth) {
 
     // --- PHASE 1 : ÉCHANGE HORIZONTAL (LEFT / RIGHT) ---
     if (chunk.chunk_neighbours[CHUNK_LEFT] != EXTERNAL_FACE) {
-        // Pack
-        tea_pack_buffers(fields, depth, CHUNK_LEFT, chunk.left_snd_buffer.data(), offsets_lr.data());
-        
-        // Send/Recv
-        tea_send_recv_message_left(chunk.left_snd_buffer.data(), chunk.left_rcv_buffer.data(),
-                                   end_pack_idx_lr, 1, 2, 
-                                   &request_lr[msg_count_lr], &request_lr[msg_count_lr+1]);
-        msg_count_lr += 2;
+        tea_pack_buffers(fields, depth, CHUNK_LEFT, chunk.left_snd_buffer.data(), lr_offset.data());
+        tea_send_recv_message_left(chunk.left_snd_buffer.data(), chunk.left_rcv_buffer.data(), 
+                                   end_pack_lr, 1, 2, &requests[msg_count], &requests[msg_count+1]);
+        msg_count += 2;
     }
     if (chunk.chunk_neighbours[CHUNK_RIGHT] != EXTERNAL_FACE) {
-        // Pack
-        tea_pack_buffers(fields, depth, CHUNK_RIGHT, chunk.right_snd_buffer.data(), offsets_lr.data());
-        
-        // Send/Recv
-        tea_send_recv_message_right(chunk.right_snd_buffer.data(), chunk.right_rcv_buffer.data(),
-                                    end_pack_idx_lr, 2, 1, 
-                                    &request_lr[msg_count_lr], &request_lr[msg_count_lr+1]);
-        msg_count_lr += 2;
+        tea_pack_buffers(fields, depth, CHUNK_RIGHT, chunk.right_snd_buffer.data(), lr_offset.data());
+        tea_send_recv_message_right(chunk.right_snd_buffer.data(), chunk.right_rcv_buffer.data(), 
+                                    end_pack_lr, 2, 1, &requests[msg_count], &requests[msg_count+1]);
+        msg_count += 2;
     }
 
-    // Wait for Left/Right
-    if (depth == 1) {
-        // Optimization for depth 1 (Testing?) - Kept logic from Fortran
-        int flag = 0;
-        MPI_Testall(msg_count_lr, request_lr, &flag, status_array);
-        if (!flag) {
-            MPI_Waitall(msg_count_lr, request_lr, status_array);
-        }
-    } else {
-        MPI_Waitall(msg_count_lr, request_lr, status_array);
-    }
-
-    // Unpack Left/Right
-    if (chunk.chunk_neighbours[CHUNK_LEFT] != EXTERNAL_FACE) {
-        tea_unpack_buffers(fields, depth, CHUNK_LEFT, chunk.left_rcv_buffer.data(), offsets_lr.data());
-    }
-    if (chunk.chunk_neighbours[CHUNK_RIGHT] != EXTERNAL_FACE) {
-        tea_unpack_buffers(fields, depth, CHUNK_RIGHT, chunk.right_rcv_buffer.data(), offsets_lr.data());
+    if (msg_count > 0) {
+        MPI_Waitall(msg_count, requests, MPI_STATUSES_IGNORE);
+        if (chunk.chunk_neighbours[CHUNK_LEFT] != EXTERNAL_FACE)
+            tea_unpack_buffers(fields, depth, CHUNK_LEFT, chunk.left_rcv_buffer.data(), lr_offset.data());
+        if (chunk.chunk_neighbours[CHUNK_RIGHT] != EXTERNAL_FACE)
+            tea_unpack_buffers(fields, depth, CHUNK_RIGHT, chunk.right_rcv_buffer.data(), lr_offset.data());
     }
 
     // --- PHASE 2 : ÉCHANGE VERTICAL (BOTTOM / TOP) ---
     msg_count = 0; // On réinitialise le compteur pour les requêtes verticales
     if (chunk.chunk_neighbours[CHUNK_BOTTOM] != EXTERNAL_FACE) {
-        tea_pack_buffers(fields, depth, CHUNK_BOTTOM, chunk.bottom_snd_buffer.data(), offsets_ud.data());
-        
-        tea_send_recv_message_bottom(chunk.bottom_snd_buffer.data(), chunk.bottom_rcv_buffer.data(),
-                                     end_pack_idx_ud, 3, 4,
-                                     &request_ud[msg_count_ud], &request_ud[msg_count_ud+1]);
-        msg_count_ud += 2;
+        tea_pack_buffers(fields, depth, CHUNK_BOTTOM, chunk.bottom_snd_buffer.data(), bt_offset.data());
+        tea_send_recv_message_bottom(chunk.bottom_snd_buffer.data(), chunk.bottom_rcv_buffer.data(), 
+                                     end_pack_bt, 3, 4, &requests[msg_count], &requests[msg_count+1]);
+        msg_count += 2;
     }
     if (chunk.chunk_neighbours[CHUNK_TOP] != EXTERNAL_FACE) {
-        tea_pack_buffers(fields, depth, CHUNK_TOP, chunk.top_snd_buffer.data(), offsets_ud.data());
-
-        tea_send_recv_message_top(chunk.top_snd_buffer.data(), chunk.top_rcv_buffer.data(),
-                                  end_pack_idx_ud, 4, 3,
-                                  &request_ud[msg_count_ud], &request_ud[msg_count_ud+1]);
-        msg_count_ud += 2;
+        tea_pack_buffers(fields, depth, CHUNK_TOP, chunk.top_snd_buffer.data(), bt_offset.data());
+        tea_send_recv_message_top(chunk.top_snd_buffer.data(), chunk.top_rcv_buffer.data(), 
+                                  end_pack_bt, 4, 3, &requests[msg_count], &requests[msg_count+1]);
+        msg_count += 2;
     }
 
-    // Wait for Top/Bottom
-    MPI_Waitall(msg_count_ud, request_ud, status_array);
-
-    // Unpack Top/Bottom
-    if (chunk.chunk_neighbours[CHUNK_TOP] != EXTERNAL_FACE) {
-        tea_unpack_buffers(fields, depth, CHUNK_TOP, chunk.top_rcv_buffer.data(), offsets_ud.data());
-    }
-    if (chunk.chunk_neighbours[CHUNK_BOTTOM] != EXTERNAL_FACE) {
-        tea_unpack_buffers(fields, depth, CHUNK_BOTTOM, chunk.bottom_rcv_buffer.data(), offsets_ud.data());
+    if (msg_count > 0) {
+        MPI_Waitall(msg_count, requests, MPI_STATUSES_IGNORE);
+        if (chunk.chunk_neighbours[CHUNK_BOTTOM] != EXTERNAL_FACE)
+            tea_unpack_buffers(fields, depth, CHUNK_BOTTOM, chunk.bottom_rcv_buffer.data(), bt_offset.data());
+        if (chunk.chunk_neighbours[CHUNK_TOP] != EXTERNAL_FACE)
+            tea_unpack_buffers(fields, depth, CHUNK_TOP, chunk.top_rcv_buffer.data(), bt_offset.data());
     }
 }
+
 
 // MPI Low-Level Wrappers
 
@@ -311,7 +281,8 @@ void tea_send_recv_message_bottom(double* snd_buf, double* rcv_buf, int size,
 }
 
 void tea_finalize() {
+    std::cout.flush();
+    std::cerr.flush();
     MPI_Finalize();
 }
 
-} // namespace TeaLeaf

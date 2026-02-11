@@ -10,6 +10,7 @@
 #include "set_field.h"
 #include "field_summary.h"
 
+#include <cmath>
 
 void start() {
     using namespace TeaLeaf;
@@ -26,7 +27,7 @@ void start() {
     if(parallel.boss){
         *g_out << "Setting up initial geometry" << "\n";
     }
-    time = 0.0;
+    timee = 0.0;
     step = 0;
     dt = dtinit;
 
@@ -89,10 +90,9 @@ void start() {
     }
     set_field();             // Copie energy0 vers energy1
     field_summary();         // Calcule la masse/énergie totale initiale
-    if (visit_frequency != 0) {
-        visit();             // Sortie fichier pour visualisation
-    }
+    //if (visit_frequency != 0) {
+    //    visit();             // Sortie fichier pour visualisation
+    //}
     tea_barrier();
-    profiler_on = profiler_original;
-}
+    //profiler_on = profiler_original;
 }

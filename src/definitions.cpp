@@ -72,7 +72,7 @@ namespace TeaLeaf {
     int end_step = 0;
 
     double dt = 0.0;
-    double time = 0.0;
+    double timee = 0.0;
     double dtinit = 0.0;
 
     int visit_frequency = 0;
