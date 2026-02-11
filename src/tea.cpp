@@ -78,24 +78,26 @@ void tea_decompose(int x_cells, int y_cells) {
     if (mpi_coords[1] < mod_y) chunk.top++;
 
     if (parallel.boss) {
-        std::cout << "\nMesh ratio of " << (double)x_cells/y_cells << std::endl;
-        std::cout << "Decomposing the mesh into " << chunk_x << " by " << chunk_y << " chunks" << std::endl;
+        *g_out << "\n Mesh ratio of " << (double)x_cells/y_cells << "\n";
+        *g_out << " Decomposing the mesh into " << chunk_x << " by " << chunk_y << " chunks\n";
     }
+
 }
 
 void tea_decompose_tiles(int x_cells, int y_cells) {
     int tiles_x, tiles_y, mod_x, mod_y;
     int delta_x, delta_y;
-    double best_fit_v = 0.0;
-    int best_fit_i = 0;
+    double best_fit_v;
+    int best_fit_i;
 
-    // 1. Trouver la meilleure division pour les tiles par tâche
+    best_fit_v = 0.0;
+    best_fit_i = 0;
+
     for (int i = 1; i <= tiles_per_task; ++i) {
         if (tiles_per_task % i != 0) continue;
         int j = tiles_per_task / i;
 
-        // On cherche le ratio le plus proche de 1 (carré)
-        double fit_v = (double)std::min(x_cells / i, y_cells / j) / 
+        double fit_v = (double)std::min(x_cells / i, y_cells / j) /
                        (double)std::max(x_cells / i, y_cells / j);
 
         if (fit_v > best_fit_v) {
@@ -112,37 +114,61 @@ void tea_decompose_tiles(int x_cells, int y_cells) {
     chunk.tile_dims[0] = best_fit_i;
     chunk.tile_dims[1] = tiles_per_task / best_fit_i;
 
-    // 2. Calcul des dimensions de base
     tiles_x = chunk.tile_dims[0];
     tiles_y = chunk.tile_dims[1];
+
+    best_fit_v = 0.0;
+    best_fit_i = 0;
+
+    double xs_cells = static_cast<double>(x_cells) / tiles_x;
+    double ys_cells = static_cast<double>(y_cells) / tiles_y;
+
+    for (int i = 1; i <= sub_tiles_per_tile; ++i) {
+        if (sub_tiles_per_tile % i != 0) continue;
+        int j = sub_tiles_per_tile / i;
+
+        double fit_v = std::min(xs_cells / i, ys_cells / j) /
+                       std::max(xs_cells / i, ys_cells / j);
+
+        if (fit_v > best_fit_v) {
+            best_fit_v = fit_v;
+            best_fit_i = i;
+        }
+    }
+
+    if (best_fit_i == 0) {
+        std::cerr << "No fit found - sub_tiles_per_tile=" << sub_tiles_per_tile << std::endl;
+        exit(1);
+    }
+
+    chunk.sub_tile_dims[0] = best_fit_i;
+    chunk.sub_tile_dims[1] = sub_tiles_per_tile / best_fit_i;
+
     delta_x = x_cells / tiles_x;
     delta_y = y_cells / tiles_y;
     mod_x = x_cells % tiles_x;
     mod_y = y_cells % tiles_y;
 
-    // Redimensionner le vecteur de tiles (0-based indexing)
     chunk.tiles.resize(tiles_per_task);
 
-    // 3. Boucle de création des tiles
     for (int j = 0; j < tiles_x; ++j) {
         for (int k = 0; k < tiles_y; ++k) {
-            int t = j * tiles_y + k; // Index 0 à tiles_per_task-1
+            int t = j * tiles_y + k;
 
             chunk.tiles[t].tile_coords[0] = j;
             chunk.tiles[t].tile_coords[1] = k;
 
-            // Calcul des bords de la tile (logique Fortran adaptée au 0-based)
-            chunk.tiles[t].left = chunk.left + j * delta_x + std::min(j, mod_x);
-            chunk.tiles[t].right = chunk.tiles[t].left + delta_x - 1;
+            chunk.tiles[t].left   = chunk.left + j * delta_x + std::min(j, mod_x);
+            chunk.tiles[t].right  = chunk.tiles[t].left + delta_x - 1;
             if (j < mod_x) chunk.tiles[t].right++;
 
             chunk.tiles[t].bottom = chunk.bottom + k * delta_y + std::min(k, mod_y);
-            chunk.tiles[t].top = chunk.tiles[t].bottom + delta_y - 1;
+            chunk.tiles[t].top    = chunk.tiles[t].bottom + delta_y - 1;
             if (k < mod_y) chunk.tiles[t].top++;
 
-            // Voisins des tiles
-            std::fill(chunk.tiles[t].tile_neighbours.begin(), chunk.tiles[t].tile_neighbours.end(), EXTERNAL_FACE);
-            
+            std::fill(chunk.tiles[t].tile_neighbours.begin(), 
+                      chunk.tiles[t].tile_neighbours.end(), EXTERNAL_FACE);
+
             if (j > 0)           chunk.tiles[t].tile_neighbours[CHUNK_LEFT]   = (j - 1) * tiles_y + k;
             if (j < tiles_x - 1) chunk.tiles[t].tile_neighbours[CHUNK_RIGHT]  = (j + 1) * tiles_y + k;
             if (k > 0)           chunk.tiles[t].tile_neighbours[CHUNK_BOTTOM] = j * tiles_y + (k - 1);
@@ -151,7 +177,7 @@ void tea_decompose_tiles(int x_cells, int y_cells) {
     }
 
     if (parallel.boss) {
-        std::cout << "Decomposing each chunk into " << tiles_x << " by " << tiles_y << " tiles\n";
+         *g_out << " Decomposing each chunk into " << tiles_x << " by " << tiles_y << " tiles\n\n";
     }
 }
 

@@ -56,12 +56,20 @@ void start() {
     }
 
     if(parallel.boss){
-        *g_out << "Tile size "<<chunk.tiles[0].x_cells<<" by "<<chunk.tiles[0].y_cells<<" cells \n";
+        *g_out << " Tile size "<<chunk.tiles[0].x_cells<<" by "<<chunk.tiles[0].y_cells<<" cells \n";
 
-        *g_out << "Sub-tile size ranges from "  << std::floor((double)chunk.tiles[tiles_per_task].x_cells / (double)chunk.sub_tile_dims[0]) << " by " 
-                                                << std::floor((double)chunk.tiles[tiles_per_task].y_cells / (double)chunk.sub_tile_dims[1]) << " cells to" 
-                                                << std::ceil((double)chunk.tiles[0].x_cells / (double)chunk.sub_tile_dims[0]) << " by "
-                                                << std::ceil((double)chunk.tiles[0].y_cells / (double)chunk.sub_tile_dims[1]) << " cells \n";
+    if (chunk.sub_tile_dims[0] == 0 || chunk.sub_tile_dims[1] == 0) {
+        *g_out << " Errorr : sub_tile_dims cannot be 0.\n";
+    } else {
+        int last_tile_index = tiles_per_task - 1;
+        *g_out << " Sub-tile size ranges from "
+       << std::floor((double)chunk.tiles[last_tile_index].x_cells / (double)chunk.sub_tile_dims[0]) << " by "
+       << std::floor((double)chunk.tiles[last_tile_index].y_cells / (double)chunk.sub_tile_dims[1]) << " cells to "
+       << std::ceil((double)chunk.tiles[0].x_cells / (double)chunk.sub_tile_dims[0]) << " by "
+       << std::ceil((double)chunk.tiles[0].y_cells / (double)chunk.sub_tile_dims[1]) << " cells \n";
+
+    }
+
                                                
     }
 

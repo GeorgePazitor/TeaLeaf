@@ -91,7 +91,6 @@ void read_input() {
     max_iters = 1000;
     eps = 1.0e-10;
 
-    use_fortran_kernels = true; 
     coefficient = CONDUCTIVITY;
     
     profiler_on = false;
@@ -335,9 +334,6 @@ void read_input() {
 
     if (parallel.boss) {
         *g_out << " tiles per task          " << tiles_per_task << "\n\n";
-        if (use_fortran_kernels) {
-            *g_out << " Using Fortran Kernels\n";
-        }
         *g_out << "\n Input read finished.\n\n";
         g_out->flush();
     }
