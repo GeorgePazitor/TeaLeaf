@@ -163,5 +163,7 @@ namespace TeaLeaf {
     extern Chunk_type chunk;
 
     extern Grid_type grid;
+
+    extern double timer();
  
 }

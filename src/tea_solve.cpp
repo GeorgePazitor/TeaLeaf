@@ -20,13 +20,6 @@
 
 using namespace TeaLeaf;
 
-#include <chrono>
-
-double timer() {
-    auto now = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch());
-    return duration.count() * 1e-9;
-}
 
 void diffuse() {
     int loc_idx = 0;
