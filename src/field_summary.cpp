@@ -10,8 +10,9 @@
 #include <mpi.h>
 #include <omp.h>
 
+namespace TeaLeaf {
+
 void field_summary() {
-    using namespace TeaLeaf;
 
     // Local accumulators
     double vol = 0.0;
@@ -121,4 +122,6 @@ void field_summary() {
             }
         }
     }
+}
+
 }
