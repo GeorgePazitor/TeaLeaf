@@ -17,7 +17,7 @@ namespace TeaLeaf {
 void visit() {
     static bool first_call = true;
     std::string name = "tea";
-    double kernel_time;
+    double kernel_time = 0.0;
 
     // --- 1. Gestion du fichier Maître .visit ---
     if (first_call) {

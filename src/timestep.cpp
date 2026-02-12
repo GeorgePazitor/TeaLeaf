@@ -5,6 +5,7 @@
 
 #include "timestep.h"
 #include "data.h"
+#include "calc_dt.h"
 #include "tea.h"
 #include "global_mpi.h"
 #include "definitions.h"
@@ -12,7 +13,7 @@
 namespace TeaLeaf {
 
 void timestep() {
-    double kernel_time;
+    double kernel_time = 0.0;
     double dtlp; // Pas de temps local par tuile
 
     if (profiler_on) {
@@ -24,9 +25,8 @@ void timestep() {
     {
         #pragma omp for nowait
         for (int t = 0; t < tiles_per_task; ++t) {
-            // Appel du kernel pour calculer le dt de la tuile actuelle
-            // Note : On passe dtlp par référence pour imiter le comportement Fortran
-            calc_dt_kernel(t, dtlp);
+
+            calc_dt(dtlp);
 
             // Section critique pour mettre à jour le dt global du chunk
             #pragma omp critical

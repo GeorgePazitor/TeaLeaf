@@ -2,6 +2,6 @@
 
 namespace TeaLeaf {
 
-    void tea_leaf();
+    void calc_dt(double& local_dt);
 
 } // namespace TeaLeaf

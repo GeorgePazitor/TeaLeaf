@@ -1,6 +1,7 @@
 #include "data.h"
 #include "tea.h"
 #include "initialise.h"
+#include "diffuse.h"
 
 #include <mpi.h>
 #include <omp.h>
@@ -29,7 +30,7 @@ int main(int argc, char** argv){
     
   initialise();
 
-  //diffuse();
+  diffuse();
 
 //Deallocate everything
 

@@ -35,6 +35,13 @@ set(SRC_FILES
     src/start.cpp
     src/tea.cpp
     src/update_halo.cpp
+    src/diffuse.cpp
+    src/timestep.cpp
+    src/tea_solve.cpp
+    src/tea_leaf_common.cpp
+    src/field_summary.cpp
+    src/visit.cpp
+    src/calc_dt.cpp
 )
 
 # Kernel files in src/kernels/
@@ -46,6 +53,8 @@ set(KERNEL_FILES
     src/kernels/field_summary_kernel.cpp
     src/kernels/update_halo_kernel.cpp
     src/kernels/update_internal_halo_kernel.cpp
+    src/kernels/tea_leaf_common_kernel.cpp
+    src/kernels/tea_leaf_jacobi_kernel.cpp
 )
 
 # Combine all library sources
@@ -67,6 +76,15 @@ set(LIB_HEADERS
     src/start.h
     src/tea.h
     src/update_halo.h
+    src/diffuse.h
+    src/timestep.h
+    src/tea_solve.h
+    src/tea_leaf_common.h
+    src/field_summary.h
+    src/visit.h
+    src/calc_dt.h
+    src/kernels/tea_leaf_common_kernel.h
+    src/kernels/tea_leaf_jacobi_kernel.h
     src/kernels/generate_chunk_kernel.h
     src/kernels/initialise_chunk_kernel.h
     src/kernels/pack_kernel.h
