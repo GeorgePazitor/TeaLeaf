@@ -15,8 +15,8 @@ void initialise_chunk() {
         
         auto& tile = chunk.tiles[t];
 
-       double tile_xmin = grid.xmin + dx * (double)(tile.left - 1);
-        double tile_ymin = grid.ymin + dy * (double)(tile.bottom - 1);
+       double tile_xmin = grid.xmin + dx * (double)(tile.left);
+        double tile_ymin = grid.ymin + dy * (double)(tile.bottom);
 
         initialise_chunk_kernel(
             tile.field.x_min, 

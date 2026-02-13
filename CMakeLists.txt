@@ -40,6 +40,7 @@ set(SRC_FILES
     src/tea_solve.cpp
     src/tea_leaf_common.cpp
     src/field_summary.cpp
+    src/tea_leaf_jacobi.cpp
     src/visit.cpp
     src/calc_dt.cpp
 )
@@ -83,6 +84,7 @@ set(LIB_HEADERS
     src/field_summary.h
     src/visit.h
     src/calc_dt.h
+    src/tea_leaf_jacobi.h
     src/kernels/tea_leaf_common_kernel.h
     src/kernels/tea_leaf_jacobi_kernel.h
     src/kernels/generate_chunk_kernel.h

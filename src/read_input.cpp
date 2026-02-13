@@ -214,6 +214,12 @@ void read_input() {
                 summary_frequency = parser.get_int();
                 if (parallel.boss) *g_out << " summary_frequency       " << summary_frequency << "\n";
             }
+            else if (word == "test_problem") {
+                test_problem = parser.get_int();
+                if (parallel.boss) {
+                    *g_out << " test_problem             " << test_problem << "\n";
+                }
+            }
             else if (word == "tiles_per_task") {
                 tiles_per_task = parser.get_int();
                 if (parallel.boss) *g_out << " tiles_per_task          " << tiles_per_task << "\n";

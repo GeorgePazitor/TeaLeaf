@@ -67,10 +67,9 @@ void diffuse() {
             grind_time = wall_clock / (rstep * cells);
             step_grind = step_clock / cells;
 
-            std::cout << "Wall clock " << wall_clock << std::endl;
-            std::cerr << "Wall clock " << wall_clock << std::endl;
-            std::cerr << "Average time per cell " << grind_time << std::endl;
-            std::cerr << "Step time per cell    " << step_grind << std::endl;
+             *g_out << "Wall clock " << wall_clock << std::endl;
+             *g_out << "Average time per cell " << grind_time << std::endl;
+             *g_out << "Step time per cell    " << step_grind << std::endl;
         }
 
         // Condition de sortie
@@ -81,9 +80,9 @@ void diffuse() {
 
             wall_clock = timer() - timer_start;
             if (parallel.boss) {
-                std::cout << "\nCalculation complete\nTea is finishing" << std::endl;
-                std::cout << "First step overhead " << (first_step - second_step) << std::endl;
-                std::cout << "Wall clock " << wall_clock << std::endl;
+                 *g_out << "\nCalculation complete\nTea is finishing" << std::endl;
+                 *g_out << "First step overhead " << (first_step - second_step) << std::endl;
+                 *g_out << "Wall clock " << wall_clock << std::endl;
             }
             break; // Équivalent de EXIT en Fortran
         }
