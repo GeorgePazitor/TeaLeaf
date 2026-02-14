@@ -1,6 +1,7 @@
 #include <cmath>
 #include <vector>
 #include <omp.h>
+#include <cstring>
 #include "include/kernels/tea_leaf_jacobi_kernel.h"
 
 namespace TeaLeaf {
@@ -37,9 +38,12 @@ void tea_leaf_jacobi_solve_kernel(
         // Backup current state into un array
         #pragma omp for
         for (int k = y_min; k <= y_max; ++k) {
+            // Optim : avoid using IDX(j,k) twice
+            int base = (k - y_min + halo) * x_inc;
             #pragma omp simd
             for (int j = x_min; j <= x_max; ++j) {
-                un[IDX(j, k)] = u1[IDX(j, k)];
+                int idx = base + (j - x_min + halo);
+                un[idx] = u1[idx];
             }
         }
 
