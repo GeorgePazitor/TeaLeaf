@@ -3,12 +3,52 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <algorithm>
 
 namespace TeaLeaf {
 
+// Macro pour l'indexation 2D vers 1D (conserve la structure Fortran row-major/col-major simulée)
 #define IDX(j, k) (((k) - y_min + halo) * x_inc + ((j) - x_min + halo))
 
-// --- KERNEL D'INITIALISATION (Calcul de Kx, Ky, u, u0 et r) ---
+// --- PRÉCONDITIONNEUR DIAG (JACOBI) ---
+void tea_diag_init(int x_min, int x_max, int y_min, int y_max, int halo,
+                   std::vector<double>& Mi, const std::vector<double>& Di) {
+    const int x_inc = (x_max - x_min + 1) + 2 * halo;
+    const double omega = 1.0;
+    for (int k = y_min; k <= y_max; ++k) {
+        for (int j = x_min; j <= x_max; ++j) {
+            int idx = IDX(j, k);
+            Mi[idx] = (Di[idx] != 0.0) ? (omega / Di[idx]) : 0.0;
+        }
+    }
+}
+
+// --- PRÉCONDITIONNEUR BLOCK (ALGORITHME DE THOMAS) ---
+void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
+                    std::vector<double>& cp, std::vector<double>& bfp,
+                    const std::vector<double>& Ky, const std::vector<double>& Di,
+                    double ry) {
+    const int x_inc = (x_max - x_min + 1) + 2 * halo;
+    const int jac_block_size = 4; 
+
+    for (int ko = y_min; ko <= y_max; ko += jac_block_size) {
+        int bottom = ko;
+        int top = std::min(ko + jac_block_size - 1, y_max);
+
+        for (int j = x_min; j <= x_max; ++j) {
+            int idx_b = IDX(j, bottom);
+            cp[idx_b] = (-Ky[IDX(j, bottom + 1)] * ry) / Di[idx_b];
+
+            for (int k = bottom + 1; k <= top; ++k) {
+                int idx = IDX(j, k);
+                bfp[idx] = 1.0 / (Di[idx] - (-Ky[idx] * ry) * cp[IDX(j, k - 1)]);
+                cp[idx] = (-Ky[IDX(j, k + 1)] * ry) * bfp[idx];
+            }
+        }
+    }
+}
+
+// --- KERNEL D'INITIALISATION ---
 void tea_leaf_common_init_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo,
     const std::array<bool, 4>& zero_boundary, bool reflective_boundary,
@@ -22,68 +62,65 @@ void tea_leaf_common_init_kernel(
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
 
-    // 1. Initialisation de u, u0 et w
+    // 1. Initialisation u, u0 et w
     for (int k = y_min - halo; k <= y_max + halo; ++k) {
         for (int j = x_min - halo; j <= x_max + halo; ++j) {
             int idx = IDX(j, k);
             u[idx] = energy[idx] * density[idx];
             u0[idx] = u[idx];
-            if (coef == RECIP_CONDUCTIVITY) {
-                w[idx] = (density[idx] > 1e-12) ? (1.0 / density[idx]) : 1e12;
-            } else {
-                w[idx] = density[idx];
-            }
+            w[idx] = (coef == RECIP_CONDUCTIVITY) ? (1.0 / density[idx]) : density[idx];
         }
     }
 
-    // 2. Kx (Moyenne harmonique pour Test 2)
-    for (int k = y_min; k <= y_max; ++k) {
-        for (int j = x_min; j <= x_max + 1; ++j) {
-            double w1 = w[IDX(j-1, k)];
-            double w2 = w[IDX(j, k)];
-            if (coef == RECIP_CONDUCTIVITY) {
-                Kx[IDX(j, k)] = (w1 + w2) / (2.0 * w1 * w2);
-            } else {
-                Kx[IDX(j, k)] = (w1 + w2) / 2.0;
-            }
+    // 2. Calcul de Kx et Ky (Moyenne harmonique stricte comme en Fortran)
+    for (int k = y_min - halo + 1; k <= y_max + halo; ++k) {
+        for (int j = x_min - halo + 1; j <= x_max + halo; ++j) {
+            double w1_x = w[IDX(j-1, k)];
+            double w2_x = w[IDX(j, k)];
+            Kx[IDX(j, k)] = (w1_x + w2_x) / (2.0 * w1_x * w2_x);
+
+            double w1_y = w[IDX(j, k-1)];
+            double w2_y = w[IDX(j, k)];
+            Ky[IDX(j, k)] = (w1_y + w2_y) / (2.0 * w1_y * w2_y);
         }
     }
 
-    // 3. Ky
-    for (int k = y_min; k <= y_max + 1; ++k) {
-        for (int j = x_min; j <= x_max; ++j) {
-            double w1 = w[IDX(j, k-1)];
-            double w2 = w[IDX(j, k)];
-            if (coef == RECIP_CONDUCTIVITY) {
-                Ky[IDX(j, k)] = (w1 + w2) / (2.0 * w1 * w2);
-            } else {
-                Ky[IDX(j, k)] = (w1 + w2) / 2.0;
-            }
-        }
+    // 3. Conditions Limites (Si non réflectif, on annule K aux frontières)
+    if (!reflective_boundary) {
+        if (zero_boundary[0]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_min, k)] = 0.0;
+        if (zero_boundary[1]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_max+1, k)] = 0.0;
+        if (zero_boundary[2]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_min)] = 0.0;
+        if (zero_boundary[3]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_max+1)] = 0.0;
     }
 
-    // 4. CL
-    if (zero_boundary[0]) for(int k=y_min; k<=y_max; ++k) Kx[IDX(x_min, k)] = 0.0;
-    if (zero_boundary[1]) for(int k=y_min; k<=y_max; ++k) Kx[IDX(x_max+1, k)] = 0.0;
-    if (zero_boundary[2]) for(int j=x_min; j<=x_max; ++j) Ky[IDX(j, y_min)] = 0.0;
-    if (zero_boundary[3]) for(int j=x_min; j<=x_max; ++j) Ky[IDX(j, y_max+1)] = 0.0;
-
-    // 5. Di et r
+    // 4. Diagonale Di
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
             Di[idx] = 1.0 + rx * (Kx[IDX(j+1, k)] + Kx[IDX(j, k)])
                           + ry * (Ky[IDX(j, k+1)] + Ky[IDX(j, k)]);
-            
-            double Au = Di[idx] * u[idx]
-                - rx * (Kx[IDX(j+1, k)] * u[IDX(j+1, k)] + Kx[IDX(j, k)] * u[IDX(j-1, k)])
-                - ry * (Ky[IDX(j, k+1)] * u[IDX(j, k+1)] + Ky[IDX(j, k)] * u[IDX(j, k-1)]);
-            r[idx] = u0[idx] - Au;
+        }
+    }
+
+    // 5. Setup Préconditionneurs
+    if (preconditioner_type == TL_PREC_JAC_DIAG) {
+        tea_diag_init(x_min, x_max, y_min, y_max, halo, Mi, Di);
+    } else if (preconditioner_type == TL_PREC_JAC_BLOCK) {
+        tea_block_init(x_min, x_max, y_min, y_max, halo, cp, bfp, Ky, Di, ry);
+    }
+
+    // 6. Résidu initial r = u0 - Au
+    for (int k = y_min; k <= y_max; ++k) {
+        for (int j = x_min; j <= x_max; ++j) {
+            int idx = IDX(j, k);
+            double smvp = Di[idx] * u[idx]
+                - ry * (Ky[IDX(j, k+1)] * u[IDX(j, k+1)] + Ky[IDX(j, k)] * u[IDX(j, k-1)])
+                - rx * (Kx[IDX(j+1, k)] * u[IDX(j+1, k)] + Kx[IDX(j, k)] * u[IDX(j-1, k)]);
+            r[idx] = u0[idx] - smvp;
         }
     }
 }
 
-// --- KERNEL DU CALCUL DU RÉSIDU (Manquant précédemment) ---
 void tea_leaf_calc_residual_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo,
     const std::vector<double>& u, const std::vector<double>& u0,
@@ -94,15 +131,15 @@ void tea_leaf_calc_residual_kernel(
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
-            double smvp = Di[IDX(j, k)] * u[IDX(j, k)]
+            int idx = IDX(j, k);
+            double smvp = Di[idx] * u[idx]
                         - ry * (Ky[IDX(j, k + 1)] * u[IDX(j, k + 1)] + Ky[IDX(j, k)] * u[IDX(j, k - 1)])
                         - rx * (Kx[IDX(j + 1, k)] * u[IDX(j + 1, k)] + Kx[IDX(j, k)] * u[IDX(j - 1, k)]);
-            r[IDX(j, k)] = u0[IDX(j, k)] - smvp;
+            r[idx] = u0[idx] - smvp;
         }
     }
 }
 
-// --- KERNEL DE LA NORME L2 (Manquant précédemment) ---
 void tea_leaf_calc_2norm_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo,
     const std::vector<double>& arr, double& norm) 
@@ -111,13 +148,13 @@ void tea_leaf_calc_2norm_kernel(
     double local_norm = 0.0;
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
-            local_norm += arr[IDX(j, k)] * arr[IDX(j, k)];
+            double val = arr[IDX(j, k)];
+            local_norm += val * val;
         }
     }
     norm = local_norm;
 }
 
-// --- KERNEL DE FINALISATION (Manquant précédemment) ---
 void tea_leaf_kernel_finalise(
     int x_min, int x_max, int y_min, int y_max, int halo,
     std::vector<double>& energy, const std::vector<double>& density,
@@ -126,7 +163,8 @@ void tea_leaf_kernel_finalise(
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
-            energy[IDX(j, k)] = u[IDX(j, k)] / density[IDX(j, k)];
+            int idx = IDX(j, k);
+            energy[idx] = u[idx] / density[idx];
         }
     }
 }

@@ -12,21 +12,14 @@ int main(int argc, char** argv){
 
     tea_init_comms();
 
-    #pragma omp parallel
-    {
-    
-        if(parallel.boss){
-            if(omp_get_thread_num() == 0){
-                std::cout << "\n";
-                std::cout << "\nTea Version: " << g_version;
-                std::cout << "\nMPI Version: \n"; //TODO: add mpi and open mpi versions
-                std::cout << "OpenMP Version. \n";// TODO:
-                std::cout << "\nTask Count: " << parallel.max_task ;
-                std::cout << "Thread Count: " << omp_get_num_threads() ;
-            }
-        }
-     
+    if (parallel.boss) {
+        std::cout << "\n\nTea Version: " << g_version;
+        std::cout << "\nMPI Version:\n";
+        std::cout << "OpenMP Version\n";
+        std::cout << "\nTask Count: " << parallel.max_task;
+        std::cout << "Thread Count: " << omp_get_max_threads();
     }
+
     
   initialise();
 
