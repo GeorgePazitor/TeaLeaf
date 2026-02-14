@@ -11,7 +11,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|Intel")
-    add_compile_options(-O3 -march=native -Wall -Wextra)
+    add_compile_options(-O3 -march=native -Wall -Wextra -ffast-math -funroll-loops -fomit-frame-pointer)
 endif()
 
 # dependencies

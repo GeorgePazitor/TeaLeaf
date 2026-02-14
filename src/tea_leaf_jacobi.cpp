@@ -1,6 +1,6 @@
-#include "include/tea.h"
-#include "include/data.h"
-#include "include/definitions.h"
+#include <cmath>
+#include <vector>
+#include <omp.h>
 #include "include/kernels/tea_leaf_jacobi_kernel.h"
 
 namespace TeaLeaf {
@@ -9,46 +9,67 @@ namespace TeaLeaf {
  * Orchestrates the Jacobi solver across all tiles in the current MPI rank.
  * Uses OpenMP to process tiles in parallel.
  */
-void tea_leaf_jacobi_solve(double& error) {
-    double total_tile_error = 0.0;
+void tea_leaf_jacobi_solve_kernel(
+    int x_min, int x_max, int y_min, int y_max,
+    int halo, double rx, double ry,
+    const std::vector<double>& Kx_v,
+    const std::vector<double>& Ky_v,
+    double& error,
+    const std::vector<double>& u0_v,
+    std::vector<double>& u1_v,
+    std::vector<double>& un_v) 
+{
+    const int x_inc = (x_max - x_min + 1) + 2 * halo;
+    double local_error = 0.0;
 
-    // Distribute tiles among OpenMP threads. 
-    // We use a reduction on total_tile_error to aggregate results from all threads.
-    #ifdef OMP
-    #pragma omp parallel reduction(+:total_tile_error)
-    #endif
+    // Obtain raw pointers for better performance
+    const double* __restrict u0 = u0_v.data();
+    double* __restrict u1 = u1_v.data();
+    double* __restrict un = un_v.data();
+    const double* __restrict Kx = Kx_v.data();
+    const double* __restrict Ky = Ky_v.data();
+
+    #define IDX(j, k) (((k) - y_min + halo) * x_inc + ((j) - x_min + halo))
+
+    // Single parallel region to reduce fork/join overhead
+    #pragma omp parallel
     {
-        #ifdef OMP
+        // Backup current state into un array
         #pragma omp for
-        #endif
-        for (int t = 0; t < tiles_per_task; ++t) {
-            double tile_error = 0.0;
-            auto& f = chunk.tiles[t].field;
+        for (int k = y_min; k <= y_max; ++k) {
+            #pragma omp simd
+            for (int j = x_min; j <= x_max; ++j) {
+                un[IDX(j, k)] = u1[IDX(j, k)];
+            }
+        }
 
-            /**
-             * The actual numerical work happens in the kernel.
-             * * @param u0        : The initial state (source term)
-             * @param u         : The current solution (updated in-place)
-             * @param vector_r  : Used here as 'un' (values from previous iteration)
-             * @param rx, ry    : Pre-calculated coefficients (dt / dx^2)
-             * @param vector_Kx : Conductivity coefficients in X
-             * @param vector_Ky : Conductivity coefficients in Y
-             */
-            tea_leaf_jacobi_solve_kernel(
-                f.x_min, f.x_max, f.y_min, f.y_max,
-                chunk.halo_exchange_depth,
-                f.rx, f.ry,
-                f.vector_Kx, f.vector_Ky,
-                tile_error,
-                f.u0, f.u, f.vector_r 
-            );
+        // Perform Jacobi update and accumulate local error
+        #pragma omp for reduction(+:local_error)
+        for (int k = y_min; k <= y_max; ++k) {
+            #pragma omp simd
+            for (int j = x_min; j <= x_max; ++j) {
+                int idx = IDX(j, k);
+                
+                // Compute numerator: weighted sum of neighboring fluxes
+                double num = u0[idx] 
+                    + rx * (Kx[IDX(j+1, k)] * un[IDX(j+1, k)] + Kx[idx] * un[IDX(j-1, k)])
+                    + ry * (Ky[IDX(j, k+1)] * un[IDX(j, k+1)] + Ky[idx] * un[IDX(j, k-1)]);
 
-            total_tile_error += tile_error;
+                // Compute denominator: sum of diagonal coefficients
+                double den = 1.0 
+                    + rx * (Kx[idx] + Kx[IDX(j+1, k)])
+                    + ry * (Ky[idx] + Ky[IDX(j, k+1)]);
+
+                // Update solution and accumulate error
+                u1[idx] = num / den;
+                local_error += std::abs(u1[idx] - un[idx]);
+            }
         }
     }
-    
-    // Final error for this MPI task (will be summed globally in tea_solve.cpp)
-    error = total_tile_error;
+
+    error = local_error;
+
+    #undef IDX
 }
 
 } // namespace TeaLeaf
