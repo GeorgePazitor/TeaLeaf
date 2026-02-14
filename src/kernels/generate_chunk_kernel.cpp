@@ -1,7 +1,12 @@
-#include "generate_chunk_kernel.h"
+#include "include/kernels/generate_chunk_kernel.h"
 #include <omp.h>
 #include <cmath>
 
+/**
+ * Initializes the physical fields (density, energy) based on predefined states.
+ * States are applied as overlays: State 1 is the background, and subsequent 
+ * states (2 to N) overwrite the background if the cell falls within their geometry.
+ */
 void generate_chunk_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo_depth,
     double* vertexx, double* vertexy, double* cellx, double* celly,
@@ -13,17 +18,16 @@ void generate_chunk_kernel(
     double* state_radius, int* state_geometry, 
     int g_rect, int g_circ, int g_point) 
 {
-    // Calcul de la largeur avec halo pour l'indexation du champ 2D à plat
+    // Width calculation for 1D mapping of 2D buffers, including halo zones.
     int width = (x_max + halo_depth) - (x_min - halo_depth) + 1;
 
-    // Macro pour l'indexation des champs (density, energy, u0)
+    // Macro for 2D-to-1D mapping of field arrays (density, energy, etc.)
     #define FIELD_IDX(j, k) ((k - (y_min - halo_depth)) * width + (j - (x_min - halo_depth)))
     
-    // Macro pour l'indexation des coordonnées (vertex/cell)
-    // Ces tableaux commencent généralement à 0 dans le chunk/tile
+    // Macro for coordinate arrays (vertex/cell), accounting for the -2 padding offset.
     #define V_IDX(p, p_min) (p - (p_min - 2)) 
 
-    // 1. Initialisation avec le State 1 (Background)
+    // Every cell in the chunk (including halos) is set to the base state.
     #pragma omp parallel for collapse(2)
     for (int k = y_min - halo_depth; k <= y_max + halo_depth; ++k) {
         for (int j = x_min - halo_depth; j <= x_max + halo_depth; ++j) {
@@ -33,7 +37,7 @@ void generate_chunk_kernel(
         }
     }
 
-    // 2. Application des Overlays (States 2 à N)
+    // Higher index states act as "stickers" placed over the background.
     for (int s = 2; s <= number_of_states; ++s) {
         #pragma omp parallel for collapse(2)
         for (int k = y_min - halo_depth; k <= y_max + halo_depth; ++k) {
@@ -41,29 +45,31 @@ void generate_chunk_kernel(
                 
                 bool apply = false;
 
+                // Case: Rectangular Geometry
                 if (state_geometry[s] == g_rect) {
-                    // Les conditions strictes de TeaLeaf :
-                    // On vérifie si la maille est dans les limites globales ET si ses sommets intersectent le rectangle
+                    // Check if cell is within the physical domain and intersects state bounds
                     if (j >= x_min && j <= x_max && k >= y_min && k <= y_max) {
                         int j_idx = V_IDX(j, x_min);
                         int k_idx = V_IDX(k, y_min);
                         
-                        // Utilisation des sommets (vertices) comme en Fortran
+                        // Intersection test using cell vertices
                         if (vertexx[j_idx + 1] >= state_xmin[s] && vertexx[j_idx] < state_xmax[s] &&
                             vertexy[k_idx + 1] >= state_ymin[s] && vertexy[k_idx] < state_ymax[s]) {
                             apply = true;
                         }
                     }
                 } 
+                // Case: Circular Geometry
                 else if (state_geometry[s] == g_circ) {
                     int j_idx = V_IDX(j, x_min);
                     int k_idx = V_IDX(k, y_min);
-                    double dx = cellx[j_idx] - state_xmin[s];
-                    double dy = celly[k_idx] - state_ymin[s];
+                    double dx = cellx[j_idx] - state_xmin[s]; // xmin used as center_x
+                    double dy = celly[k_idx] - state_ymin[s]; // ymin used as center_y
                     if (std::sqrt(dx*dx + dy*dy) <= state_radius[s]) {
                         apply = true;
                     }
                 }
+                // Case: Point Geometry
                 else if (state_geometry[s] == g_point) {
                     int j_idx = V_IDX(j, x_min);
                     int k_idx = V_IDX(k, y_min);
@@ -81,7 +87,7 @@ void generate_chunk_kernel(
         }
     }
 
-    // 3. Calcul final de u0 (Énergie interne volumique)
+    // u0 = density * energy0. This is the value actually used by the solver.
     #pragma omp parallel for collapse(2)
     for (int k = y_min - halo_depth; k <= y_max + halo_depth; ++k) {
         for (int j = x_min - halo_depth; j <= x_max + halo_depth; ++j) {

@@ -1,7 +1,7 @@
 #pragma once
+
 #include <vector>
 #include <array>
-//using namespace TeaLeaf;
 
 void update_halo_kernel(
     int x_min, int x_max, 

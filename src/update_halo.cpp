@@ -1,42 +1,49 @@
-#include "update_halo.h"
-#include "tea.h"
-#include "data.h"
-#include "definitions.h"
-#include "pack.h" 
-#include "kernels/update_halo_kernel.h"
-#include "kernels/update_internal_halo_kernel.h" 
+#include "include/update_halo.h"
+#include "include/tea.h"
+#include "include/data.h"
+#include "include/definitions.h"
+#include "include/pack.h" 
+#include "include/kernels/update_halo_kernel.h"
+#include "include/kernels/update_internal_halo_kernel.h" 
 #include <mpi.h>
 #include <omp.h>
 #include <algorithm> // std::any_of 
 using namespace TeaLeaf;
 
-
+/**
+ * Orchestrates the full halo exchange process across MPI ranks, 
+ * physical boundaries, and internal tiles.
+ */
 void update_halo(const int* fields, int depth) {
 
     double halo_time = 0.0;
     if (profiler_on) halo_time = MPI_Wtime();
 
-    // MPI halo exchange, defined in pack_module 
+    // Perform inter-process communication via MPI
+    // This synchronizes data between different MPI ranks
     tea_exchange(fields, depth); 
 
     if (profiler_on) {
         profiler.halo_exchange += (MPI_Wtime() - halo_time);
     }
 
-    // physical coundary conditions (reflective)
+    // Apply reflective boundary conditions at the edges of the global domain
     update_boundary(fields, depth);
 
-    // internal tile exchange 
+    // Synchronize data between tiles within the same MPI rank
     update_tile_boundary(fields, depth);
 }
 
-// considering reflective wall(if enabled)
+/**
+ * Handles physical boundary conditions (e.g., reflective walls).
+ * Checks if the current chunk sits on the global domain edge.
+ */
 void update_boundary(const int* fields, int depth) {
 
     double halo_time = 0.0;
     if (profiler_on) halo_time = MPI_Wtime();
 
-    // check if we are on a boundary and if reflection is enabled
+    // Identify if any face of the current chunk is an external domain boundary
     bool is_external = false;
     for (int n : chunk.chunk_neighbours) {
         if (n == EXTERNAL_FACE) {
@@ -45,12 +52,14 @@ void update_boundary(const int* fields, int depth) {
         }
     }
 
+    // Apply kernels only if reflective boundaries are enabled and we are at the edge
     if (reflective_boundary && is_external) {
         
         #pragma omp parallel for
         for (int t = 0; t < tiles_per_task; ++t) {
             auto& tile = chunk.tiles[t];
 
+            // Kernel call to mirror data across the boundary for all specified fields
             update_halo_kernel(
                 tile.field.x_min,
                 tile.field.x_max,
@@ -58,9 +67,8 @@ void update_boundary(const int* fields, int depth) {
                 tile.field.y_max,
                 chunk.halo_exchange_depth,
                 chunk.chunk_neighbours,
-                tile.tile_neighbours, // Pass vector<int>
+                tile.tile_neighbours, 
                 
-                // Fields
                 tile.field.density.data(),
                 tile.field.energy0.data(),
                 tile.field.energy1.data(),
@@ -83,28 +91,26 @@ void update_boundary(const int* fields, int depth) {
     }
 }
 
-// update Internal tile boundaries (shared memory copy)
-
+/**
+ * Performs shared-memory data copies between tiles inside a single MPI rank.
+ * Required when the domain is decomposed into multiple tiles per task.
+ */
 void update_tile_boundary(const int* fields, int depth) {
 
     double halo_time = 0.0;
     if (profiler_on) halo_time = MPI_Wtime();
 
-    // Only needed if we decomposed the rank into multiple tiles
     if (tiles_per_task > 1) {
         
         #pragma omp parallel
         {
-            // --- Pass 1: Left / Right Exchange ---
+            // --- Pass 1: Horizontal Exchange (Left and Right neighbors) ---
             #pragma omp for nowait
             for (int t = 0; t < tiles_per_task; ++t) {
-                // Get neighbor index (0-based adjustment if your neighbors are 1-based)
-                // Assuming neighbor array stores 0-based indices for C++
                 int right_idx = chunk.tiles[t].tile_neighbours[CHUNK_RIGHT];
 
                 if (right_idx != EXTERNAL_FACE) {
-                    // Call kernel to copy from Tile T to Tile RIGHT_IDX
-                    // Note: You need to implement update_internal_halo_left_right_kernel
+                    // Direct memory copy from current tile to its right-hand neighbor
                     update_internal_halo_left_right_kernel(
                         chunk.tiles[t].field.x_min,
                         chunk.tiles[t].field.x_max,
@@ -122,7 +128,6 @@ void update_tile_boundary(const int* fields, int depth) {
                         chunk.tiles[t].field.vector_Ky.data(),
                         chunk.tiles[t].field.vector_Di.data(),
                         
-                        // Neighbor Data
                         chunk.tiles[right_idx].field.x_min,
                         chunk.tiles[right_idx].field.x_max,
                         chunk.tiles[right_idx].field.y_min,
@@ -146,17 +151,16 @@ void update_tile_boundary(const int* fields, int depth) {
                 }
             }
             
-            // Barrier needed between L/R and T/B updates? 
-            // Fortran logic suggests barrier if depth > 1 inside kernels, 
-            // but for safety in shared memory copies, a barrier here is wise.
+            // Sync threads to ensure horizontal updates are visible before vertical pass
             #pragma omp barrier
 
-            // --- Pass 2: Top / Bottom Exchange ---
+            // --- Pass 2: Vertical Exchange (Bottom and Top neighbors) ---
             #pragma omp for nowait
             for (int t = 0; t < tiles_per_task; ++t) {
                 int up_idx = chunk.tiles[t].tile_neighbours[CHUNK_TOP];
 
                 if (up_idx != EXTERNAL_FACE) {
+                    // Direct memory copy from current tile to its neighbor above
                     update_internal_halo_bottom_top_kernel(
                          chunk.tiles[t].field.x_min,
                         chunk.tiles[t].field.x_max,
@@ -174,7 +178,6 @@ void update_tile_boundary(const int* fields, int depth) {
                         chunk.tiles[t].field.vector_Ky.data(),
                         chunk.tiles[t].field.vector_Di.data(),
                         
-                        // Neighbor Data
                         chunk.tiles[up_idx].field.x_min,
                         chunk.tiles[up_idx].field.x_max,
                         chunk.tiles[up_idx].field.y_min,

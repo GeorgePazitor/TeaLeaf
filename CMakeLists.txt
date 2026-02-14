@@ -63,37 +63,37 @@ set(LIB_SOURCES ${SRC_FILES} ${KERNEL_FILES})
 
 # Headers
 set(LIB_HEADERS
-    src/data.h
-    src/build_field.h
-    src/definitions.h
-    src/field_summary.h
-    src/generate_chunk.h
-    src/global_mpi.h
-    src/initialise_chunk.h
-    src/initialise.h
-    src/pack.h
-    src/read_input.h
-    src/set_field.h
-    src/start.h
-    src/tea.h
-    src/update_halo.h
-    src/diffuse.h
-    src/timestep.h
-    src/tea_solve.h
-    src/tea_leaf_common.h
-    src/field_summary.h
-    src/visit.h
-    src/calc_dt.h
-    src/tea_leaf_jacobi.h
-    src/kernels/tea_leaf_common_kernel.h
-    src/kernels/tea_leaf_jacobi_kernel.h
-    src/kernels/generate_chunk_kernel.h
-    src/kernels/initialise_chunk_kernel.h
-    src/kernels/pack_kernel.h
-    src/kernels/set_field_kernel.h
-    src/kernels/field_summary_kernel.h
-    src/kernels/update_halo_kernel.h
-    src/kernels/update_internal_halo_kernel.h
+    src/include/data.h
+    src/include/build_field.h
+    src/include/definitions.h
+    src/include/field_summary.h
+    src/include/generate_chunk.h
+    src/include/global_mpi.h
+    src/include/initialise_chunk.h
+    src/include/initialise.h
+    src/include/pack.h
+    src/include/read_input.h
+    src/include/set_field.h
+    src/include/start.h
+    src/include/tea.h
+    src/include/update_halo.h
+    src/include/diffuse.h
+    src/include/timestep.h
+    src/include/tea_solve.h
+    src/include/tea_leaf_common.h
+    src/include/field_summary.h
+    src/include/visit.h
+    src/include/calc_dt.h
+    src/include/tea_leaf_jacobi.h
+    src/include/kernels/tea_leaf_common_kernel.h
+    src/include/kernels/tea_leaf_jacobi_kernel.h
+    src/include/kernels/generate_chunk_kernel.h
+    src/include/kernels/initialise_chunk_kernel.h
+    src/include/kernels/pack_kernel.h
+    src/include/kernels/set_field_kernel.h
+    src/include/kernels/field_summary_kernel.h
+    src/include/kernels/update_halo_kernel.h
+    src/include/kernels/update_internal_halo_kernel.h
 )
 
 # create library (not yet executable)
@@ -105,7 +105,7 @@ target_link_libraries(tealeaf_lib PUBLIC MPI::MPI_CXX OpenMP::OpenMP_CXX)
 
 
 # Include Directories
-# This allows you to do #include "tea.h" AND #include "kernels/pack_kernel.h"
+# This allows you to do #include "include/tea.h" AND #include "include/kernels/pack_kernel.h"
 target_include_directories(tealeaf_lib PUBLIC 
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels"

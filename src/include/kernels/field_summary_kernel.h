@@ -1,4 +1,5 @@
 #pragma once
+
 void field_summary_kernel(
     int x_min, int x_max, 
     int y_min, int y_max, 
