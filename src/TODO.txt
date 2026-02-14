@@ -1,11 +1,11 @@
 In future developements consider that :
 
-// no report module, just use std::cerr  and MPI_Abort(MPI_COMM_WORLD, error_code);
-// no parse module - logic is integrated into initialise.cpp for simplicity
+no report module, just use std::cerr  and MPI_Abort(MPI_COMM_WORLD, error_code);
+no parse module - logic is integrated into initialise.cpp for simplicity
 
+fix g_out and input file stream to be the same for all the initialisation and reading parts 
 
-// fix g_out and input file stream to be the same for all the initialisation and reading parts 
-
+Add mpi and open mpi versions in outputm initialise.cpp and main.cpp
 --
 
 For the moment and because we haven't much time, I suggest we should only implement Jacobi, which is the simplest method.

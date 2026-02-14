@@ -13,13 +13,13 @@
 
 std::ofstream g_file_stream;
 
-// Helper to check file existence
+//check file existence
 bool file_exists(const std::string& name) {
     std::ifstream f(name.c_str());
     return f.good();
 }
 
-// Helper to strip comments and copy (Replaces parse_module logic for this snippet)
+//strip comments and copy (replaces parse_module logic for this snippet)
 void clean_input_file(const std::string& input_file, const std::string& output_file) {
     std::ifstream infile(input_file);
     std::ofstream outfile(output_file);
@@ -35,14 +35,12 @@ void clean_input_file(const std::string& input_file, const std::string& output_f
 
     std::string line;
     while (std::getline(infile, line)) {
-        // strip comments starting with '!' or '#'
+        //strip comments starting with ! or #
         size_t comment_pos = line.find_first_of("!#");
         if (comment_pos != std::string::npos) {
             line = line.substr(0, comment_pos);
         }
         
-        // TODO :other possible additions to the simple parser
-
         if (!line.empty()) {
             outfile << line << "\n";
         }
@@ -60,20 +58,19 @@ void initialise() {
         }
         g_out = &g_file_stream;
     } else {
-        // Non-boss ranks write to null or stdout
-        // Usually in MPI we silence non-root ranks or let them print to stdout.
+        //non-boss ranks write to stdout
         g_out = &std::cout; 
     }
 
     #pragma omp parallel
     {
-        // Only Master thread of Master Rank prints
+        // only master rank prints
         #pragma omp master
         {
             if (parallel.boss) {
                 *g_out << "\n";
                 *g_out << "Tea Version      " << g_version << "\n";
-                *g_out << "MPI Version\n";                
+                *g_out << "MPI Version\n";    // TODO - add mpi and open mpi versions            
                 *g_out << "OpenMP Version\n";
                 *g_out << "Task Count       " << parallel.max_task << "\n";                
                 *g_out << "Thread Count:    " << omp_get_num_threads() << "\n";
@@ -90,10 +87,11 @@ void initialise() {
     }
 
     if (parallel.boss) {
-        // Check if tea.in exists
-        if (!file_exists("tea.in")) {
+        //check if tea.in exists
+        if (!file_exists("../src/tea.in")) {
             // Generate default input file
-            std::ofstream out_unit("tea.in");
+            std::cout << "\nNo input file found. Generating default tea.in\n";
+            std::ofstream out_unit("../src/tea.in");
             if (!out_unit.is_open()) {
                 std::cerr << "initialise: " << "Error creating default tea.in";
                 MPI_Abort(MPI_COMM_WORLD, 1);
@@ -105,25 +103,27 @@ void initialise() {
             out_unit << "state 2 density=0.1 energy=25.0 geometry=rectangle xmin=0.0 xmax=1.0 ymin=1.0 ymax=2.0\n";
             out_unit << "state 3 density=0.1 energy=0.1 geometry=rectangle xmin=1.0 xmax=6.0 ymin=1.0 ymax=2.0\n";
             out_unit << "state 4 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=6.0 ymin=1.0 ymax=8.0\n";
-            out_unit << "state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0\n";
-            out_unit << "x_cells=10\n";
-            out_unit << "y_cells=10\n";
+            out_unit << "state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0\n\n";
+            out_unit << "x_cells=1000\n";
+            out_unit << "y_cells=1000\n\n";
             out_unit << "xmin=0.0\n";
             out_unit << "ymin=0.0\n";
             out_unit << "xmax=10.0\n";
-            out_unit << "ymax=10.0\n";
+            out_unit << "ymax=10.0\n\n";
             out_unit << "initial_timestep=0.004\n";
-            out_unit << "end_step=10\n";
+            out_unit << "end_step=10\n\n";
             out_unit << "tl_max_iters=1000\n";
             out_unit << " test_problem 1\n";
             out_unit << "tl_use_jacobi\n";
-            out_unit << "tl_eps=1.0e-15\n";
+            out_unit << "tl_eps=1.0e-15\n\n";
             out_unit << "*endtea\n";
             out_unit.close();
+        }else{
+            std::cout << "\nFile found, using the specified tea.in\n";
         }
 
         // Parse/Clean the input file to tea.in.tmp
-        clean_input_file("tea.in", "tea.in.tmp");
+        clean_input_file("../src/tea.in", "../src/tea.in.tmp");
     }
 
     // wait for boss to finish file i/o
@@ -131,7 +131,7 @@ void initialise() {
 
     // boss reads the original file just to echo it to the log
     if (parallel.boss) {
-        std::ifstream uin("tea.in");
+        std::ifstream uin("../src/tea.in");
         if (uin.is_open()) {
             std::string ltmp;
             while (std::getline(uin, ltmp)) {
@@ -145,13 +145,13 @@ void initialise() {
     }
 
     // 
-    // 1. Check tea.in -> 2. Generate if missing -> 3. Clean to tea.in.tmp -> 4. Broadcast/Read
+    // check tea.in, generate if missing, clean to tea.in.tmp, broadcast/read
 
-    // Reads from tea.in.tmp (logic assumed to be inside read_input)
+    // reads from tea.in.tmp 
     read_input();
 
     MPI_Barrier(MPI_COMM_WORLD);
- 
+
     step = 0;
 
     start();

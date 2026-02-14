@@ -68,7 +68,6 @@ public:
 };
 
 void read_input() {
-    //using namespace TeaLeaf; 
     
     test_problem = 0;
     int state_max = 0;
@@ -77,8 +76,8 @@ void read_input() {
     grid.ymin = 0.0;
     grid.xmax = 100.0;
     grid.ymax = 100.0;
-    grid.x_cells = 10;
-    grid.y_cells = 10;
+    grid.x_cells = 1;
+    grid.y_cells = 1;
 
     end_time = 10.0;
     end_step = g_ibig;
@@ -94,13 +93,13 @@ void read_input() {
     coefficient = CONDUCTIVITY;
     
     profiler_on = false;
-    // Assuming Profiler_type has a default constructor or we zero it manually:
+
     profiler = Profiler_type(); 
 
     tiles_per_task = 1;
     sub_tiles_per_tile = 1;
 
-    // OpenMP Thread Check
+    // openMP thread check
     #pragma omp parallel
     {
         #pragma omp master
@@ -131,7 +130,7 @@ void read_input() {
     
     //scan states to know how many states exist to allocate memory
     
-    InputParser parser("tea.in.tmp");
+    InputParser parser("../src/tea.in.tmp");
 
     while (parser.next_line()) {
         while (true) {
@@ -152,7 +151,7 @@ void read_input() {
         std::cerr <<"read_input: " << "No states defined.";
     }
 
-    // 1-based indexing to match Fortran ID logic
+    // 1 based indexing to match Fortran ID logic
     states.resize(number_of_states + 1);
 
     for(auto& s : states) {
@@ -217,16 +216,16 @@ void read_input() {
             else if (word == "test_problem") {
                 test_problem = parser.get_int();
                 if (parallel.boss) {
-                    *g_out << " test_problem             " << test_problem << "\n";
+                    *g_out << " test_problem            " << test_problem << "\n";
                 }
             }
             else if (word == "tiles_per_task") {
                 tiles_per_task = parser.get_int();
-                if (parallel.boss) *g_out << " tiles_per_task          " << tiles_per_task << "\n";
+                if (parallel.boss) *g_out << " tiles_per_task#          " << tiles_per_task << "\n";
             }
             else if (word == "sub_tiles_per_tile") {
                 sub_tiles_per_tile = parser.get_int();
-                if (parallel.boss) *g_out << " sub_tiles_per_tile      " << sub_tiles_per_tile << "\n";
+                if (parallel.boss) *g_out << " sub_tiles_per_tile#      " << sub_tiles_per_tile << "\n";
             }
             else if (word == "tl_max_iters") {
                 max_iters = parser.get_int();
@@ -273,10 +272,10 @@ void read_input() {
 
                 states[id].defined = true;
 
-                // Inner Loop for State Properties
+                // Inner loop for state properties
                 while(true) {
                     std::string sw = parser.get_word();
-                    if (sw == "") break; // End of line
+                    if (sw == "") break;
 
                     if (sw == "xmin") {
                         states[id].xmin = parser.get_double();
@@ -325,8 +324,6 @@ void read_input() {
         }
     }
 
-    // --- 4. LOGIC CHECKS & ADJUSTMENTS ---
-
     // Heuristic for PPCG steps if not set
     if (tl_ppcg_inner_steps == -1 && tl_use_ppcg) {
         double total_cells = (double)grid.x_cells * (double)grid.y_cells;
@@ -344,12 +341,11 @@ void read_input() {
         g_out->flush();
     }
 
-    // Adjust State Boundaries to avoid floating point errors on cell edges
+    //adjust state boundaries to avoid floating point errors on cell edges
     double dx = (grid.xmax - grid.xmin) / (double)grid.x_cells;
     double dy = (grid.ymax - grid.ymin) / (double)grid.y_cells;
 
-    // Fortran loop was DO n=2,number_of_states. 
-    // State 1 is background, usually covers everything, so no need to shrink it.
+    //state 1 is background, usually covers everything, so no need to shrink it.
     for (int n = 2; n <= number_of_states; ++n) {
         states[n].xmin += (dx / 100.0);
         states[n].ymin += (dy / 100.0);
