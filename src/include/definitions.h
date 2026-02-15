@@ -27,7 +27,7 @@ namespace TeaLeaf {
     extern int test_problem;
     extern bool complete;
 
-    extern bool use_fortran_kernels;
+    extern bool use_fortran_kernels; // TODO  : remove this flag and associated code
     extern bool tl_use_chebyshev;
     extern bool tl_use_cg;
     extern bool tl_use_ppcg;
@@ -109,6 +109,9 @@ namespace TeaLeaf {
                             tri_bfp, 
                             row_sums;
 
+        // vertexx, vertexy,  vertices coordinates define the corners of the cells.
+        // cellx, celly, cell coordinates, they are located halfway between vertices.
+        // celldx, celldy, define the grid spacing in each direction (constant if uniform grid)
         std::vector<double> cellx, celly, vertexx, vertexy, celldx, celldy, vertexdx, vertexdy;
         
         std::vector<double> volume, xarea, yarea;

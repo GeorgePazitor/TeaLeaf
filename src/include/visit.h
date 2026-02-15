@@ -1,10 +1,7 @@
-#ifndef VISIT_H
-#define VISIT_H
-
+#pragma once
 namespace TeaLeaf {
 
 void visit();
 
 }
 
-#endif

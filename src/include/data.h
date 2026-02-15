@@ -6,7 +6,7 @@
 
 namespace TeaLeaf {
 
-    // Version, constants
+    // version, constants
     constexpr double g_version = 0.1;
     constexpr int    g_ibig    = 640000;
 
@@ -17,14 +17,14 @@ namespace TeaLeaf {
     constexpr int g_xdir         = 1;
     constexpr int g_ydir         = 2;
 
-    // Halo Faces 
+    // halo Faces 
     constexpr int CHUNK_LEFT    = 0;
     constexpr int CHUNK_RIGHT   = 1;
     constexpr int CHUNK_BOTTOM  = 2;
     constexpr int CHUNK_TOP     = 3;
     constexpr int EXTERNAL_FACE = -1;
 
-    // Fields
+    // fields
     constexpr int FIELD_DENSITY = 0;
     constexpr int FIELD_ENERGY0 = 1;
     constexpr int FIELD_ENERGY1 = 2;
@@ -58,7 +58,7 @@ namespace TeaLeaf {
 
     constexpr int g_len_max = 500;
 
-    // Parallel structure
+    // parallel structure
     struct Parallel_type {
         bool boss;
         int max_task;
@@ -66,7 +66,7 @@ namespace TeaLeaf {
         int task;
     };
 
-    // Globals
+    // globals
     extern std::ostream* g_out;
 
     extern int tiles_per_task;

@@ -11,10 +11,8 @@
 #include "include/field_summary.h"
 #include <cmath>
 
-/**
- * Coordinates the setup of the simulation geometry and initial state.
- * This is where memory is mapped and the initial physical fields are populated.
- */
+
+//setup of the simulation geometry and initial state Here memory is mapped and the initial physical fields are set up.
 void start() {
     using namespace TeaLeaf;
 
@@ -24,21 +22,17 @@ void start() {
         *g_out << "Setting up initial geometry" << "\n";
     }
 
-    // Initialize simulation time and step counter
     timee = 0.0;
     step = 0;
     dt = dtinit;
 
-    // Synchronize all ranks before starting allocation
     tea_barrier(); 
 
-    // MPI Decomposition: Calculate which part of the global grid this rank owns.
+    //calculate which part of the global grid this rank owns.
     tea_decompose(grid.x_cells, grid.y_cells);
 
-    // Resize the tile vector based on decomposition results
     chunk.tiles.resize(tiles_per_task); 
 
-    // Calculate local chunk dimensions
     chunk.x_cells = chunk.right - chunk.left + 1;
     chunk.y_cells = chunk.top - chunk.bottom + 1;
     chunk.chunk_x_min = 1;
@@ -46,7 +40,7 @@ void start() {
     chunk.chunk_x_max = chunk.x_cells;
     chunk.chunk_y_max = chunk.y_cells;
 
-    // Tile Decomposition: Divide the local chunk into smaller tiles for OpenMP threads.
+    //divides the local chunk into smaller tiles for OpenMP threads.
     tea_decompose_tiles(chunk.x_cells, chunk.y_cells);
 
     for (int t = 0; t < tiles_per_task; ++t) {
@@ -58,7 +52,6 @@ void start() {
         chunk.tiles[t].field.y_max = chunk.tiles[t].y_cells;
     }
 
-    // Log tile information for debugging/tuning
     if(parallel.boss){
         *g_out << " Tile size " << chunk.tiles[0].x_cells << " by " << chunk.tiles[0].y_cells << " cells \n";
 
@@ -74,23 +67,19 @@ void start() {
         }
     }
 
-    // Memory Allocation
-    build_field();           // Allocates memory for the physical variables (density, energy, etc.)
-    tea_allocate_buffers();  // Allocates MPI communication buffers
-    initialise_chunk();      // Sets up initial spatial coordinates (x_area, y_area, etc.)
+    build_field();          
+    tea_allocate_buffers();  
+    initialise_chunk();      
 
     if(parallel.boss){
         *g_out << " Generating chunk \n";
     }
 
-    // Refresh global grid dimensions to ensure consistency
     grid.x_cells = mpi_dims[0] * chunk.tile_dims[0] * chunk.sub_tile_dims[0];
     grid.y_cells = mpi_dims[1] * chunk.tile_dims[1] * chunk.sub_tile_dims[1];
 
-    // State Generation
-    generate_chunk();        // Populates the fields with the defined material states/shapes
+    generate_chunk();       
 
-    // Initial Halo Exchange
     fields[FIELD_DENSITY] = 1;
     fields[FIELD_ENERGY0] = 1;
     fields[FIELD_ENERGY1] = 1;
@@ -100,9 +89,8 @@ void start() {
         *g_out << " \n Problem initialized and generated \n";
     }
 
-    // Final setup before main loop
-    set_field();             // Clones initial energy state: energy0 -> energy1
-    field_summary();         // Performs global reduction to calculate total mass and energy
+    set_field();             //clones initial energy state: energy0 -> energy1
+    field_summary();         
 
     tea_barrier();
 }

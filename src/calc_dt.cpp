@@ -4,16 +4,10 @@
 
 namespace TeaLeaf {
 
-    /**
-     * Calculates the time step size (dt) for the current iteration.
-     * In this implementation, it sets the local time step to the initial 
-     * user-defined value.
-     */
+    //can serve to compute a stable time step based on the current state of the simulation but for now we just set it to the initial value.
     void calc_dt(double& local_dt) {
         
-        // Assign the initial time step value defined during input parsing.
-        // In more complex hydrodynamics codes, this would involve CFL 
-        // stability checks across all grid cells.
+        
         local_dt = dtinit;
         
     }

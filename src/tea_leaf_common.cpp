@@ -29,17 +29,15 @@ void tea_leaf_init_common() {
             auto& tile = chunk.tiles[t];
             auto& f = tile.field;
 
-            // rx = dt / dx^2. Used to scale diffusion in X
+            //scale diffusion in x
             f.rx = dt / (f.celldx[0] * f.celldx[0]);
             f.ry = dt / (f.celldy[0] * f.celldy[0]);
 
-            // Determine if tile faces are on the edge of the GLOBAL domain
             for (int i = 0; i < 4; ++i) {
                 zero_boundary[i] = (tile.tile_neighbours[i] == EXTERNAL_FACE && 
                                     chunk.chunk_neighbours[i] == EXTERNAL_FACE);
             }
 
-            // Calls the lower-level kernel to populate Kx, Ky and initial U vectors
             tea_leaf_common_init_kernel(
                 f.x_min, f.x_max, f.y_min, f.y_max,
                 chunk.halo_exchange_depth,

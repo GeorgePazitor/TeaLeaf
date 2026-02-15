@@ -13,19 +13,17 @@
 namespace TeaLeaf {
 
 /**
- * Calculates the next time step (dt) for the simulation.
- * Ensures the time step is small enough to capture the physics accurately
- * while synchronized across all MPI ranks.
- */
+*Computes the next time step (dt) for the simulation, ensures the time step is small enough to capture the physics accurately
+*synchronisation among all MPI ranks 
+*/
 void timestep() {
     double kernel_time = 0.0;
-    double dtlp; // Local time step for a single tile
+    double dtlp; //local time step for a single tile
 
     if (profiler_on) {
         kernel_time = timer();
     }
 
-    // Parallel search for the minimum dt across local tiles
     #ifdef OMP
     #pragma omp parallel private(dtlp)
     #endif
@@ -35,10 +33,9 @@ void timestep() {
         #endif
         for (int t = 0; t < tiles_per_task; ++t) {
 
-            // Compute physics-based dt for this specific tile
+            //computes dt for this specific tile
             calc_dt(dtlp);
 
-            // Thread-safe update of the chunk-level dt
             #ifdef OMP
             #pragma omp critical
             #endif
@@ -50,15 +47,13 @@ void timestep() {
         }
     }
 
-    // Global MPI reduction: find the minimum dt across all processes
-    // This ensures time synchronization across the entire distributed domain
+    //global MPI reduction minimum dt across all processes
     tea_min(dt);
 
     if (profiler_on) {
         profiler.timestep += (timer() - kernel_time);
     }
 
-    // Report progress to the user
     if (parallel.boss) {
         auto print_msg = [&](std::ostream& os) {
             os << " Step " << std::setw(7) << step

@@ -1,10 +1,7 @@
-#ifndef TIMESTEP_H
-#define TIMESTEP_H
-
+#pragma once
 namespace TeaLeaf {
     
     void timestep();
 
 } // namespace TeaLeaf
 
-#endif

@@ -15,10 +15,7 @@
 
 using namespace TeaLeaf;
 
-/**
- * Helper class to parse the input file line by line and word by word.
- * Handles string-to-numeric conversions and cleans up formatting.
- */
+
 class InputParser {
 
 std::ifstream file;
@@ -33,16 +30,13 @@ public:
         }
     }
 
-    // Returns to the beginning of the file for multi-pass parsing
     void reset() {
         file.clear();
         file.seekg(0, std::ios::beg);
     }
 
-    // Reads the next available line and prepares it for tokenization
     bool next_line() {
         if (std::getline(file, current_line)) {
-            // Replace '=' with space to handle "key=value" formats easily
             std::replace(current_line.begin(), current_line.end(), '=', ' ');
             
             current_line_ss.clear();
@@ -52,7 +46,6 @@ public:
         return false;
     }
 
-    // Extracts the next string token from the current line
     std::string get_word() {
         std::string word;
         if (current_line_ss >> word) {
@@ -61,14 +54,12 @@ public:
         return "";
     }
 
-    // Converts the next token to an integer
     int get_int() {
         std::string w = get_word();
         try { return std::stoi(w); }
         catch (...) { return 0; }
     }
 
-    // Converts the next token to a double
     double get_double() {
         std::string w = get_word();
         try { return std::stod(w); }
@@ -76,13 +67,9 @@ public:
     }
 };
 
-/**
- * Main input reading function. 
- * Sets default values, parses the input file, and configures the simulation states.
- */
+
 void read_input() {
     
-    // --- Initialize default simulation parameters ---
     test_problem = 0;
     int state_max = 0;
 
@@ -113,7 +100,6 @@ void read_input() {
     tiles_per_task = 1;
     sub_tiles_per_tile = 1;
 
-    // Detect hardware threads to set default tile count
     #pragma omp parallel
     {
         #pragma omp master
@@ -129,7 +115,6 @@ void read_input() {
     reflective_boundary = false;
     tl_ppcg_inner_steps = -1;
 
-    // Default solver selection
     tl_use_chebyshev = false;
     tl_use_cg = false;
     tl_use_ppcg = false;
@@ -142,8 +127,6 @@ void read_input() {
         *g_out << "Reading input file\n\n";
     }
 
-    // --- Pass 1: Scan for the maximum number of states ---
-    // Needed to allocate the state vector before detailed parsing
     InputParser parser("../src/tea.in.tmp");
 
     while (parser.next_line()) {
@@ -164,7 +147,6 @@ void read_input() {
         std::cerr <<"read_input: " << "No states defined.";
     }
 
-    // Allocate states (1-based indexing to match Fortran-style ID logic)
     states.resize(number_of_states + 1);
 
     for(auto& s : states) {
@@ -173,7 +155,6 @@ void read_input() {
         s.density = 0.0;
     }
 
-    // --- Pass 2: Actual reading of simulation and state parameters ---
     parser.reset();
 
     while (parser.next_line()) {
@@ -278,7 +259,6 @@ void read_input() {
                 if (parallel.boss) *g_out << " Verbose on\n";
             }
             else if (word == "state") {
-                // Read and initialize a specific physics state
                 int id = parser.get_int();
                 
                 if (parallel.boss) *g_out << " Reading specification for state " << id << "\n";
@@ -288,7 +268,6 @@ void read_input() {
 
                 states[id].defined = true;
 
-                // Sub-loop to read specific geometric and physical properties of the state
                 while(true) {
                     std::string sw = parser.get_word();
                     if (sw == "") break;
@@ -340,14 +319,12 @@ void read_input() {
         }
     }
 
-    // Heuristic for PPCG inner steps based on total grid size if not user-defined
     if (tl_ppcg_inner_steps == -1 && tl_use_ppcg) {
         double total_cells = (double)grid.x_cells * (double)grid.y_cells;
         tl_ppcg_inner_steps = 4 * (int)std::sqrt(std::sqrt(total_cells));
         if (parallel.boss) *g_out << " tl_ppcg_inner_steps     " << tl_ppcg_inner_steps << "\n";
     }
 
-    // Validation for specific preconditioner requirements
     if (chunk.halo_exchange_depth > 1 && tl_preconditioner_type == TL_PREC_JAC_BLOCK) {
         std::cerr <<"read_input: " << "Unable to use nonstandard halo depth with block jacobi preconditioner";
     }
@@ -358,11 +335,10 @@ void read_input() {
         g_out->flush();
     }
 
-    // Adjust state boundaries slightly inward to prevent floating point issues at cell interfaces
+    //adjust state boundaries slightly to prevent floating point issues at cell interfaces
     double dx = (grid.xmax - grid.xmin) / (double)grid.x_cells;
     double dy = (grid.ymax - grid.ymin) / (double)grid.y_cells;
 
-    // Background state (1) is left as-is, secondary states are shrunken slightly
     for (int n = 2; n <= number_of_states; ++n) {
         states[n].xmin += (dx / 100.0);
         states[n].ymin += (dy / 100.0);

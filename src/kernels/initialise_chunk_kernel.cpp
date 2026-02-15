@@ -3,8 +3,7 @@
 #include <algorithm>
 
 /**
- * Initializes the geometric properties of a grid chunk.
- * This includes defining vertex positions, cell centers, and computing
+ * Initializes the geometric properties of a grid chunk defining vertex positions, cell centers, and computing
  * the volumes and face areas used in the finite volume discretization.
  */
 void initialise_chunk_kernel(
@@ -18,17 +17,15 @@ void initialise_chunk_kernel(
     double* celly, double* celldy,
     double* volume, double* xarea, double* yarea) 
 {
-    // Exact width calculations to mirror the Fortran-style padded indexing.
-    // 'vol_width' and 'yarea_width' cover -2 to +2 (size + 4)
-    // 'xarea_width' covers -2 to +3 (size + 5) to account for the right-hand face.
+    // vol_width and yarea_width cover -2 to +2 
+    // xarea_width covers -2 to +3 to account for the right-hand face.
     int vol_width   = (x_max + 2) - (x_min - 2) + 1; 
     int xarea_width = (x_max + 3) - (x_min - 2) + 1; 
     int yarea_width = (x_max + 2) - (x_min - 2) + 1; 
 
     #pragma omp parallel
     {
-        // Vertex Coordinates
-        // Vertices define the corners of the cells.
+        //vertices define the corners of the cells.
         #pragma omp for nowait
         for (int j = x_min - 2; j <= x_max + 3; ++j) {
             int idx = j - (x_min - 2);
@@ -43,8 +40,7 @@ void initialise_chunk_kernel(
             vertexdy[idx] = dy;
         }
 
-        // Cell Center Coordinates (1D)
-        // Cells are located halfway between vertices.
+        //cells are located halfway between vertices.
         #pragma omp for nowait
         for (int j = x_min - 2; j <= x_max + 2; ++j) {
             int idx = j - (x_min - 2);
@@ -58,10 +54,6 @@ void initialise_chunk_kernel(
             celly[idx]  = 0.5 * (vertexy[idx] + vertexy[idx + 1]);
             celldy[idx] = dy;
         }
-
-        // 2D Metric Fields (Volumes and Y-Areas)
-        // 'volume' is the 2D area (dx*dy) of a cell. 
-        // 'yarea' represents the length of the horizontal faces (dx).
         
         #pragma omp for
         for (int k = y_min - 2; k <= y_max + 2; ++k) {
@@ -69,20 +61,18 @@ void initialise_chunk_kernel(
             for (int j = x_min - 2; j <= x_max + 2; ++j) {
                 int j_idx = j - (x_min - 2);
                 
-                volume[k_idx * vol_width + j_idx] = dx * dy;
-                yarea[k_idx * yarea_width + j_idx] = dx;
+                volume[k_idx * vol_width + j_idx] = dx * dy; // volume: 2D area of a cell. 
+                yarea[k_idx * yarea_width + j_idx] = dx; //yarea: length of the horizontal faces dx.
             }
         }
 
-        // 2D Metric Fields (X-Areas)
-        // 'xarea' represents the length of the vertical faces (dy).
-        // It uses a wider J-range (x_max + 3) to include the boundary face on the right.
+        // It uses a wider j range (x_max + 3) to include the boundary face on the right
         #pragma omp for
         for (int k = y_min - 2; k <= y_max + 2; ++k) {
             int k_idx = k - (y_min - 2);
             for (int j = x_min - 2; j <= x_max + 3; ++j) {
                 int j_idx = j - (x_min - 2);
-                xarea[k_idx * xarea_width + j_idx] = dy;
+                xarea[k_idx * xarea_width + j_idx] = dy; //xarea: length of the vertical faces dy
             }
         }
     }

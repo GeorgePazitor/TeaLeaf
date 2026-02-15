@@ -1,5 +1,4 @@
-#ifndef TEA_LEAF_COMMON_KERNELS_H
-#define TEA_LEAF_COMMON_KERNELS_H
+#pragma once
 
 #include <vector>
 #include <array>
@@ -42,4 +41,3 @@ namespace TeaLeaf {
 
 } // namespace TeaLeaf
 
-#endif

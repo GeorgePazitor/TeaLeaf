@@ -5,39 +5,30 @@
 #include <mpi.h>
 using namespace TeaLeaf;
 
-// Forward declaration of the internal orchestration function
 void call_packing_functions(const int* fields, int depth, int face, bool packing, double* mpi_buffer, int* offsets);
 
-/**
- * Public wrapper to initiate the packing of grid data into MPI send buffers.
- */
+
 void tea_pack_buffers(const int* fields, int depth, int face, double* mpi_buffer, int* offsets) {
     call_packing_functions(fields, depth, face, true, mpi_buffer, offsets);
 }
 
-/**
- * Public wrapper to initiate the unpacking of MPI receive buffers back into the grid.
- */
+
 void tea_unpack_buffers(const int* fields, int depth, int face, double* mpi_buffer, int* offsets) {
     call_packing_functions(fields, depth, face, false, mpi_buffer, offsets);
 }
 
 /**
- * Orchestrates the parallel packing/unpacking process.
- * Iterates over tiles and delegates the actual memory copying to kernels.
+ * Iterates over tiles and delegates the actual memory copying to kernels
  */
 void call_packing_functions(const int* fields, int depth, int face, bool packing, double* mpi_buffer, int* offsets) {
 
     int tile_offset;
 
-    // Parallelize packing across OpenMP threads to speed up halo preparation
     #pragma omp parallel private(tile_offset)
     {    
         #pragma omp for nowait
         for (int t = 0; t < tiles_per_task; ++t) {
             
-            // 1. Compute the starting position (offset) for the current tile in the MPI buffer.
-            // This logic maps the 2D tile position to a 1D index.
             switch (face) { 
                 case CHUNK_LEFT:
                 case CHUNK_RIGHT:
@@ -48,7 +39,7 @@ void call_packing_functions(const int* fields, int depth, int face, bool packing
                 case CHUNK_TOP:
                     tile_offset = (chunk.tiles[t].left - chunk.left) * depth;
                     
-                    // Tricky: Account for the corner overlap in ghost cells if necessary
+                    //account for the corner overlap in ghost cells if necessary
                     if (tile_offset != 0) {
                         tile_offset += (depth * depth);
                     }
@@ -62,13 +53,10 @@ void call_packing_functions(const int* fields, int depth, int face, bool packing
                     }
             }
 
-            // 2. Only process tiles that sit on the MPI boundary for the given face.
-            // If the neighbor is internal to this MPI rank (not EXTERNAL_FACE), no MPI exchange is needed.
             if (chunk.tiles[t].tile_neighbours[face] != EXTERNAL_FACE) {
                 continue; 
             }
 
-            // 3. Delegate to the kernel: copies data between the specific tile fields and the linear MPI buffer.
             pack_all(
                 chunk.tiles[t].field.x_min,
                 chunk.tiles[t].field.x_max,

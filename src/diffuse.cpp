@@ -18,10 +18,7 @@
 
 namespace TeaLeaf {
 
-/**
- * The main time-stepping loop. Controls the simulation flow, 
- * output frequency, and performance profiling.
- */
+// The main time-stepping loop. Controls the simulation flow, output frequency, and performance profiling.
 void diffuse() {
     int loc_idx = 0;
     double timer_start, wall_clock, step_clock;
@@ -30,26 +27,24 @@ void diffuse() {
     double first_step = 0.0, second_step = 0.0;
     double kernel_total;
     
-    // Vector to collect profiling data from all MPI tasks
+    ///collects profiling data from all MPI tasks
     std::vector<double> totals(parallel.max_task);
 
     timer_start = timer(); 
     second_step = 0.0;
 
-    // --- Main Simulation Loop ---
     while (true) {
         step_time = timer();
         step++;
 
-        // Calculate next dt based on stability criteria
         timestep();    
         
-        // Execute the diffusion solver (CG, Jacobi, PPCG, or Cheby)
+        // rxecute the diffusion solver 
         tea_leaf();    
         
         timee += dt;
 
-        // Periodic reporting and visualization
+        //reporting and visualization
         if (summary_frequency != 0 && (step % summary_frequency == 0)) {
             field_summary();
         }
@@ -57,11 +52,10 @@ void diffuse() {
             visit();
         }
 
-        // Measure overhead (step 1 is usually slower due to initial allocations/caching)
+        // measure overhead 
         if (step == 1) first_step = timer() - step_time;
         if (step == 2) second_step = timer() - step_time;
 
-        // Progress reporting for the boss rank
         if (parallel.boss) {
             wall_clock = timer() - timer_start;
             step_clock = timer() - step_time;
@@ -74,7 +68,6 @@ void diffuse() {
             *g_out << "Step " << step << " time " << step_clock  << std::endl;
         }
 
-        // Exit conditions: time limit or step limit reached
         if (timee + g_small > end_time || step >= end_step) {
             complete = true;
             field_summary();
@@ -90,22 +83,20 @@ void diffuse() {
         }
     }
 
-    // --- Performance Profiling Section ---
     if (profiler_on) {
         kernel_total = profiler.timestep + profiler.halo_exchange + profiler.summary + 
                        profiler.visit + profiler.tea_init + profiler.set_field + 
                        profiler.tea_solve + profiler.tea_reset + profiler.dot_product + 
                        profiler.halo_update + profiler.internal_halo_update;
 
-        // Gather total time from all ranks to find the "bottleneck" rank
         tea_allgather(kernel_total, totals);
 
-        // Find the index of the rank that spent the most time (max load)
+        //find the index of the rank that spent the most time (max load)
         auto it = std::max_element(totals.begin(), totals.begin() + parallel.max_task);
         loc_idx = std::distance(totals.begin(), it);
         kernel_total = totals[loc_idx];
 
-        // Sync all metrics based on the slowest rank's data
+        //sync all metrics based on the slowest rank's data
         auto sync_metric = [&](double &metric) {
             tea_allgather(metric, totals);
             metric = totals[loc_idx];
@@ -150,7 +141,6 @@ void diffuse() {
         }
     }
 
-    // Clean up MPI and finalize
     tea_finalize();
 }
 

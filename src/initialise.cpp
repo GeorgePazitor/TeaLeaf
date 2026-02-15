@@ -9,18 +9,13 @@
 
 std::ofstream g_file_stream;
 
-/**
- * Checks if a file exists and is readable.
- */
+
 bool file_exists(const std::string& name) {
     std::ifstream f(name.c_str());
     return f.good();
 }
 
-/**
- * Pre-processes the input file: removes comments and empty lines.
- * Outputs to a temporary file for easier parsing.
- */
+
 void clean_input_file(const std::string& input_file, const std::string& output_file) {
     std::ifstream infile(input_file);
     std::ofstream outfile(output_file);
@@ -36,13 +31,12 @@ void clean_input_file(const std::string& input_file, const std::string& output_f
 
     std::string line;
     while (std::getline(infile, line)) {
-        // Strip comments starting with ! (Fortran style) or # (Script style)
+        // strip comments starting with ! or # 
         size_t comment_pos = line.find_first_of("!#");
         if (comment_pos != std::string::npos) {
             line = line.substr(0, comment_pos);
         }
         
-        // Only write non-empty lines to the temp file
         if (!line.empty()) {
             outfile << line << "\n";
         }
@@ -50,25 +44,22 @@ void clean_input_file(const std::string& input_file, const std::string& output_f
 }
 
 /**
- * Main initialization sequence. Sets up I/O, parses inputs, 
- * and triggers the domain generation via start().
+ * main initialization sequence: sets up i/o, parses inputs and triggers the domain generation via start()
  */
 void initialise() {
     using namespace TeaLeaf;
 
-    // Set up global output stream
     if (parallel.boss) {
         g_file_stream.open("tea.out");
         if (!g_file_stream.is_open()) {
             std::cerr << "initialise: Error opening tea.out file.\n";
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
-        g_out = &g_file_stream; // Master rank writes to file
+        g_out = &g_file_stream; 
     } else {
-        g_out = &std::cout;     // Slave ranks write to standard output
+        g_out = &std::cout;    
     }
 
-    // Print banner and versioning info
     #pragma omp parallel
     {
         #pragma omp master
@@ -84,7 +75,6 @@ void initialise() {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // Input file handling: Generate default if missing
     if (parallel.boss) {
         if (!file_exists("../src/tea.in")) {
             std::cout << "\nNo input file found. Generating default tea.in\n";
@@ -94,7 +84,6 @@ void initialise() {
                 MPI_Abort(MPI_COMM_WORLD, 1);
             }
 
-            // Write a basic physical problem (states, grid size, solver params)
             out_unit << "*tea\n"
                      << "state 1 density=100.0 energy=0.0001\n"
                      << "state 2 density=0.1 energy=25.0 geometry=rectangle xmin=0.0 xmax=1.0 ymin=1.0 ymax=2.0\n"
@@ -108,14 +97,11 @@ void initialise() {
             std::cout << "\nFile found, using the specified tea.in\n";
         }
 
-        // Create the clean version for the parser
         clean_input_file("../src/tea.in", "../src/tea.in.tmp");
     }
 
-    // Synchronize so all ranks wait for the boss to finish I/O
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // Echo the input file content to the log for traceability
     if (parallel.boss) {
         std::ifstream uin("../src/tea.in");
         if (uin.is_open()) {
@@ -127,14 +113,12 @@ void initialise() {
         *g_out << "\nInitialising and generating\n\n";
     }
 
-    // Read parameters from the cleaned temp file
     read_input();
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     step = 0;
 
-    // Start memory allocation and initial field generation (geometry, states)
     start();
 
     MPI_Barrier(MPI_COMM_WORLD);

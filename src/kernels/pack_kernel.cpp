@@ -1,20 +1,20 @@
 #include "include/kernels/pack_kernel.h"
 using namespace TeaLeaf;
 
-// Macro to handle 1D indexing for 2D grids in row-major order
+//handle 1D indexing for 2D grids in row-major order
 #define GET_IDX(x, y, stride) ((y) * (stride) + (x))
 
-/**
- * Offset adjustment for Y dimension based on data centering (Cell vs Vertex/Face).
- */
+
+//offset adjustment for y dimension based on data centering
+
 int yincs(int field_type) {
     if (field_type == VERTEX_DATA || field_type == Y_FACE_DATA) return 1;
     return 0;
 }
 
-/**
- * Offset adjustment for X dimension based on data centering.
- */
+
+//offset adjustment for x dimension based on data centering.
+ 
 int xincs(int field_type) {
     if (field_type == VERTEX_DATA || field_type == X_FACE_DATA) return 1;
     return 0;
@@ -27,7 +27,7 @@ typedef void (*pack_func_t)(
     int buffer_offset, int edge_minus, int edge_plus
 );
 
-// Internal kernel declarations
+// internal kernel decl
 void tea_pack_message_left(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
 void tea_unpack_message_left(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
 void tea_pack_message_right(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
@@ -38,8 +38,7 @@ void tea_pack_message_bottom(int, int, int, int, int, double*, double*, int, int
 void tea_unpack_message_bottom(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
 
 /**
- * Main dispatcher for all fields. Selects the appropriate directional kernel 
- * and applies it to every active field in the simulation.
+ * selects the appropriate directional kernel and applies it to every active field in the simulation.
  */
 void pack_all(
     int x_min, int x_max, int y_min, int y_max, int halo_exchange_depth,
@@ -54,7 +53,7 @@ void pack_all(
     int edge_plus = 0;
     pack_func_t pack_func = nullptr;
 
-    // Corner logic: Determines if we need to include corner ghost cells based on MPI neighbors
+    // corner logic: determines if we need to include corner ghost cells based on MPI neighbours
     switch (face) {
         case CHUNK_LEFT:
         case CHUNK_RIGHT:
@@ -84,7 +83,7 @@ void pack_all(
         }
     }
 
-    // Process each field enabled in the 'fields' bitmask
+    // process each field enabled in the fields bitmask
     if (fields[FIELD_DENSITY]) pack_func(x_min, x_max, y_min, y_max, halo_exchange_depth, density, mpi_buffer, depth, xincs(CELL_DATA), yincs(CELL_DATA), tile_offset + offsets[FIELD_DENSITY], edge_minus, edge_plus);
     if (fields[FIELD_ENERGY0]) pack_func(x_min, x_max, y_min, y_max, halo_exchange_depth, energy0, mpi_buffer, depth, xincs(CELL_DATA), yincs(CELL_DATA), tile_offset + offsets[FIELD_ENERGY0], edge_minus, edge_plus);
     if (fields[FIELD_ENERGY1]) pack_func(x_min, x_max, y_min, y_max, halo_exchange_depth, energy1, mpi_buffer, depth, xincs(CELL_DATA), yincs(CELL_DATA), tile_offset + offsets[FIELD_ENERGY1], edge_minus, edge_plus);
@@ -98,9 +97,6 @@ void pack_all(
     if (fields[FIELD_DI])      pack_func(x_min, x_max, y_min, y_max, halo_exchange_depth, di, mpi_buffer, depth, xincs(CELL_DATA), yincs(CELL_DATA), tile_offset + offsets[FIELD_DI], edge_minus, edge_plus);
 }
 
-// ----------------------------------------------------------------------------
-// Directional Kernels (Packing/Unpacking)
-// ----------------------------------------------------------------------------
 
 void tea_pack_message_left(int x_min, int x_max, int y_min, int y_max, int halo, double* field, double* buf, int depth, int x_inc, int y_inc, int buf_off, int e_minus, int e_plus) {
     int stride = (x_max + halo) - (x_min - halo) + 1; 

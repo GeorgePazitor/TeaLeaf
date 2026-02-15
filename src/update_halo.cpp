@@ -7,11 +7,10 @@
 #include "include/kernels/update_internal_halo_kernel.h" 
 #include <mpi.h>
 #include <omp.h>
-#include <algorithm> // std::any_of 
 using namespace TeaLeaf;
 
 /**
- * Orchestrates the full halo exchange process across MPI ranks, 
+ * Manages the full halo exchange process across MPI ranks, 
  * physical boundaries, and internal tiles.
  */
 void update_halo(const int* fields, int depth) {
@@ -19,18 +18,14 @@ void update_halo(const int* fields, int depth) {
     double halo_time = 0.0;
     if (profiler_on) halo_time = MPI_Wtime();
 
-    // Perform inter-process communication via MPI
-    // This synchronizes data between different MPI ranks
     tea_exchange(fields, depth); 
 
     if (profiler_on) {
         profiler.halo_exchange += (MPI_Wtime() - halo_time);
     }
 
-    // Apply reflective boundary conditions at the edges of the global domain
     update_boundary(fields, depth);
 
-    // Synchronize data between tiles within the same MPI rank
     update_tile_boundary(fields, depth);
 }
 
@@ -43,7 +38,6 @@ void update_boundary(const int* fields, int depth) {
     double halo_time = 0.0;
     if (profiler_on) halo_time = MPI_Wtime();
 
-    // Identify if any face of the current chunk is an external domain boundary
     bool is_external = false;
     for (int n : chunk.chunk_neighbours) {
         if (n == EXTERNAL_FACE) {
@@ -52,14 +46,13 @@ void update_boundary(const int* fields, int depth) {
         }
     }
 
-    // Apply kernels only if reflective boundaries are enabled and we are at the edge
+    //apply kernels only if reflective boundaries are enabled and we are at the edge
     if (reflective_boundary && is_external) {
         
         #pragma omp parallel for
         for (int t = 0; t < tiles_per_task; ++t) {
             auto& tile = chunk.tiles[t];
 
-            // Kernel call to mirror data across the boundary for all specified fields
             update_halo_kernel(
                 tile.field.x_min,
                 tile.field.x_max,
@@ -104,13 +97,11 @@ void update_tile_boundary(const int* fields, int depth) {
         
         #pragma omp parallel
         {
-            // --- Pass 1: Horizontal Exchange (Left and Right neighbors) ---
             #pragma omp for nowait
             for (int t = 0; t < tiles_per_task; ++t) {
                 int right_idx = chunk.tiles[t].tile_neighbours[CHUNK_RIGHT];
 
                 if (right_idx != EXTERNAL_FACE) {
-                    // Direct memory copy from current tile to its right-hand neighbor
                     update_internal_halo_left_right_kernel(
                         chunk.tiles[t].field.x_min,
                         chunk.tiles[t].field.x_max,
@@ -151,16 +142,13 @@ void update_tile_boundary(const int* fields, int depth) {
                 }
             }
             
-            // Sync threads to ensure horizontal updates are visible before vertical pass
             #pragma omp barrier
 
-            // --- Pass 2: Vertical Exchange (Bottom and Top neighbors) ---
             #pragma omp for nowait
             for (int t = 0; t < tiles_per_task; ++t) {
                 int up_idx = chunk.tiles[t].tile_neighbours[CHUNK_TOP];
 
                 if (up_idx != EXTERNAL_FACE) {
-                    // Direct memory copy from current tile to its neighbor above
                     update_internal_halo_bottom_top_kernel(
                          chunk.tiles[t].field.x_min,
                         chunk.tiles[t].field.x_max,

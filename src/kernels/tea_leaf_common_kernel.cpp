@@ -7,14 +7,12 @@
 
 namespace TeaLeaf {
 
-// Indexing macro: maps 2D logical coordinates to 1D physical memory.
-// It accounts for the halo (ghost cell) depth to ensure correct offset.
 #define IDX(j, k) (((k) - y_min + halo) * x_inc + ((j) - x_min + halo))
 
 // --- DIAG PRECONDITIONER (JACOBI) ---
 /**
- * Initializes the diagonal preconditioner (Mi). 
- * This is effectively a point-Jacobi step where Mi = 1/Diag(A).
+ * Initializes the diagonal preconditioner (Mi), 
+ * this is effectively a point-Jacobi step where Mi = 1/Diag(A).
  */
 void tea_diag_init(int x_min, int x_max, int y_min, int y_max, int halo,
                    std::vector<double>& Mi, const std::vector<double>& Di) {
@@ -30,8 +28,8 @@ void tea_diag_init(int x_min, int x_max, int y_min, int y_max, int halo,
 
 // --- BLOCK PRECONDITIONER (THOMAS ALGORITHM) ---
 /**
- * Sets up the tridiagonal matrix decomposition for block preconditioning.
- * Uses a simplified Thomas Algorithm (forward elimination) to store
+ * Sets up the tridiagonal matrix decomposition for block preconditioning,
+ * uses a simplified Thomas Algorithm (forward elimination) to store
  * coefficients for solving a vertical tridiagonal strip.
  */
 void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
@@ -63,10 +61,10 @@ void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
 // --- MAIN INITIALIZATION KERNEL ---
 /**
  * The core setup kernel. It:
- * 1. Computes initial temperature (u) and conductivity (w).
- * 2. Calculates face-centered conductivities (Kx, Ky) using harmonic means.
- * 3. Sets boundary conditions (Dirichlet vs Reflective).
- * 4. Forms the matrix diagonal (Di) and the initial residual (r).
+ * 1 computes initial temperature (u) and conductivity (w).
+ * 2 calculates face-centered conductivities (Kx, Ky) using harmonic means.
+ * 3 sets boundary conditions (dirichlet vs reflective).
+ * 4 forms the matrix diagonal (Di) and the initial residual (r).
  */
 void tea_leaf_common_init_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo,
@@ -81,17 +79,18 @@ void tea_leaf_common_init_kernel(
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
 
-    // 1. Physical Field Initialization
+    //1  Physical Field Initialization
+    
     for (int k = y_min - halo; k <= y_max + halo; ++k) {
         for (int j = x_min - halo; j <= x_max + halo; ++j) {
             int idx = IDX(j, k);
-            u[idx] = energy[idx] * density[idx]; // Temperature/Energy relation
+            u[idx] = energy[idx] * density[idx]; //temperature/energy relation
             u0[idx] = u[idx];
             w[idx] = (coef == RECIP_CONDUCTIVITY) ? (1.0 / density[idx]) : density[idx];
         }
     }
 
-    // 2. Compute Face Conductivities (Harmonic Mean)
+    //2 compute face conductivities (harmonic mean)
     // K values are defined at cell faces between neighbors.
     for (int k = y_min - halo + 1; k <= y_max + halo; ++k) {
         for (int j = x_min - halo + 1; j <= x_max + halo; ++j) {
@@ -105,8 +104,8 @@ void tea_leaf_common_init_kernel(
         }
     }
 
-    // 3. Apply External Boundary Conditions
-    // If not reflective (Dirichlet), we zero out the transmission coefficients at the boundary.
+    //3 applies external boundary conditions
+    // if not reflective (dirichlet) zero out the transmission coefficients at the boundary.
     if (!reflective_boundary) {
         if (zero_boundary[0]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_min, k)] = 0.0;
         if (zero_boundary[1]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_max+1, k)] = 0.0;
@@ -114,7 +113,7 @@ void tea_leaf_common_init_kernel(
         if (zero_boundary[3]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_max+1)] = 0.0;
     }
 
-    // 4. Matrix Main Diagonal Construction (Di)
+    //4 matrix main diagonal construction (Di)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -123,14 +122,14 @@ void tea_leaf_common_init_kernel(
         }
     }
 
-    // 5. Setup Preconditioners (Optional depending on solver choice)
+    //5 setup preconditioners (Optional depending on solver choice)
     if (preconditioner_type == TL_PREC_JAC_DIAG) {
         tea_diag_init(x_min, x_max, y_min, y_max, halo, Mi, Di);
     } else if (preconditioner_type == TL_PREC_JAC_BLOCK) {
         tea_block_init(x_min, x_max, y_min, y_max, halo, cp, bfp, Ky, Di, ry);
     }
 
-    // 6. Initial Residual Calculation: r = b - Au
+    // 6. initial residual calculation: r = b - Au
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -143,8 +142,8 @@ void tea_leaf_common_init_kernel(
 }
 
 /**
- * Calculates the current residual (r = b - Au).
- * Used at the end of solver iterations to determine convergence.
+ * calculates the current residual (r = b - Au).
+ * used at the end of solver iterations to determine convergence.
  */
 void tea_leaf_calc_residual_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo,
@@ -166,8 +165,8 @@ void tea_leaf_calc_residual_kernel(
 }
 
 /**
- * Computes the L2 norm (sum of squares) of a vector.
- * The result is reduced locally before being summed globally via MPI elsewhere.
+ * Computes the L2 norm (sum of squares) of a vector,
+ * the result is reduced locally before being summed globally via MPI elsewhere.
  */
 void tea_leaf_calc_2norm_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo,

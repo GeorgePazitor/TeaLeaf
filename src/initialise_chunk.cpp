@@ -4,30 +4,23 @@
 #include "include/kernels/initialise_chunk_kernel.h" 
 #include <omp.h>
 
-/**
- * Initializes the geometric properties of the grid for each tile.
- * This includes calculating cell/vertex coordinates, areas, and volumes.
- */
+//initializes the geometric properties of the grid for each tile
 void initialise_chunk() {
     using namespace TeaLeaf;
 
-    // Calculate global grid spacing (dx, dy) based on domain bounds and cell counts
     double dx = (grid.xmax - grid.xmin) / (double)grid.x_cells;
     double dy = (grid.ymax - grid.ymin) / (double)grid.y_cells;
 
-    // Parallelize the initialization of local tile geometries
     #pragma omp parallel for
     for (int t = 0; t < tiles_per_task; ++t) {
         
         auto& tile = chunk.tiles[t];
 
-        // Determine the physical origin (bottom-left) of the current tile 
-        // by offsetting from the global grid origin.
         double tile_xmin = grid.xmin + dx * (double)(tile.left);
         double tile_ymin = grid.ymin + dy * (double)(tile.bottom);
 
-        // Kernel call to populate coordinate and geometry arrays for this specific tile.
-        // This sets up Vertex (node) and Cell (centroid) positions and spacings.
+        // populates coordinate and geometry arrays for this tile
+        // sets up vertex (node) and cell (centroid) positions and spacings
         initialise_chunk_kernel(
             tile.field.x_min, 
             tile.field.x_max,

@@ -13,7 +13,7 @@ using namespace TeaLeaf;
  */
 void tea_init_comms() {
     int err, rank, size;
-    int periodic[2] = {0, 0}; // Non-periodic boundaries
+    int periodic[2] = {0, 0}; //non-periodic boundaries
 
     int initialized;
     MPI_Initialized(&initialized);
@@ -21,10 +21,9 @@ void tea_init_comms() {
 
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Automatically determines the best 2D processor grid (e.g., 4x4 for 16 ranks)
+    //automatically determines the best 2d processor grid
     MPI_Dims_create(size, 2, mpi_dims);
     
-    // Create a communicator with Cartesian topology for easy neighbor shifting
     MPI_Cart_create(MPI_COMM_WORLD, 2, mpi_dims, periodic, 1, &mpi_cart_comm);
 
     MPI_Comm_rank(mpi_cart_comm, &rank);
@@ -44,9 +43,7 @@ void tea_init_comms() {
 void tea_decompose(int x_cells, int y_cells) {
     int err;
     
-    // Finding neighbors using MPI_Cart_shift. 
-    // Note: Direction 0/1 swap is often used to reconcile Fortran column-major 
-    // with C++ row-major memory layouts.
+    // finding neighbors using MPI_Cart_shift. 
     MPI_Cart_shift(mpi_cart_comm, 1, 1, 
                     &chunk.chunk_neighbours[CHUNK_BOTTOM], 
                     &chunk.chunk_neighbours[CHUNK_TOP]);
@@ -54,7 +51,6 @@ void tea_decompose(int x_cells, int y_cells) {
                     &chunk.chunk_neighbours[CHUNK_LEFT], 
                     &chunk.chunk_neighbours[CHUNK_RIGHT]);
 
-    // Cleanup: Replace MPI_PROC_NULL with our internal boundary constant
     for(int i = 0; i < 4; ++i) {
         if(chunk.chunk_neighbours[i] == MPI_PROC_NULL) {
             chunk.chunk_neighbours[i] = EXTERNAL_FACE;
@@ -69,7 +65,7 @@ void tea_decompose(int x_cells, int y_cells) {
     int mod_x = x_cells % chunk_x;
     int mod_y = y_cells % chunk_y;
 
-    // Distribute remaining cells (mod_x/y) across the first few ranks
+    //distribute remaining cells (mod_x/y) across the first few ranks
     chunk.left = mpi_coords[0] * delta_x + std::min(mpi_coords[0], mod_x);
     chunk.right = chunk.left + delta_x - 1;
     if (mpi_coords[0] < mod_x) chunk.right++;
@@ -94,7 +90,7 @@ void tea_decompose_tiles(int x_cells, int y_cells) {
     double best_fit_v = 0.0;
     int best_fit_i = 0;
 
-    // Optimization loop to find tile dimensions closest to a square
+    //find tile dimensions closest to a square
     for (int i = 1; i <= tiles_per_task; ++i) {
         if (tiles_per_task % i != 0) continue;
         int j = tiles_per_task / i;
@@ -113,7 +109,7 @@ void tea_decompose_tiles(int x_cells, int y_cells) {
     tiles_x = chunk.tile_dims[0];
     tiles_y = chunk.tile_dims[1];
 
-    // Similar logic for sub-tiling (if applicable)
+    //similar logic for sub-tiling (if applicable)
     best_fit_v = 0.0;
     best_fit_i = 0;
     double xs_cells = static_cast<double>(x_cells) / tiles_x;
@@ -142,7 +138,7 @@ void tea_decompose_tiles(int x_cells, int y_cells) {
 
     chunk.tiles.resize(tiles_per_task);
 
-    // Populate tile structures with local coordinate offsets
+    //populates tile structures with local coordinate offsets
     for (int j = 0; j < tiles_x; ++j) {
         for (int k = 0; k < tiles_y; ++k) {
             int t = j * tiles_y + k;
@@ -155,7 +151,7 @@ void tea_decompose_tiles(int x_cells, int y_cells) {
             chunk.tiles[t].top    = chunk.tiles[t].bottom + delta_y - 1;
             if (k < mod_y) chunk.tiles[t].top++;
 
-            // Internal tile adjacency within the MPI rank
+            //internal tile adjacency within the MPI rank
             std::fill(chunk.tiles[t].tile_neighbours.begin(), chunk.tiles[t].tile_neighbours.end(), EXTERNAL_FACE);
             if (j > 0)           chunk.tiles[t].tile_neighbours[CHUNK_LEFT]   = (j - 1) * tiles_y + k;
             if (j < tiles_x - 1) chunk.tiles[t].tile_neighbours[CHUNK_RIGHT]  = (j + 1) * tiles_y + k;
@@ -199,7 +195,7 @@ void tea_exchange(const int* fields, int depth) {
     std::vector<int> bt_offset(NUM_FIELDS, 0);
     int end_pack_lr = 0, end_pack_bt = 0;
 
-    // Calculate offsets for packing multiple fields into a single message
+    //calculate offsets for packing multiple fields into a single message
     for (int f = 0; f < NUM_FIELDS; ++f) {
         if (fields[f] == 1) {
             lr_offset[f] = end_pack_lr;
@@ -212,7 +208,7 @@ void tea_exchange(const int* fields, int depth) {
     MPI_Request requests[4];
     int msg_count = 0;
 
-    // --- PHASE 1 : HORIZONTAL EXCHANGE (LEFT / RIGHT) ---
+    // HORIZONTAL EXCHANGE (LEFT / RIGHT) 
     if (chunk.chunk_neighbours[CHUNK_LEFT] != EXTERNAL_FACE) {
         tea_pack_buffers(fields, depth, CHUNK_LEFT, chunk.left_snd_buffer.data(), lr_offset.data());
         tea_send_recv_message_left(chunk.left_snd_buffer.data(), chunk.left_rcv_buffer.data(), 
@@ -234,7 +230,7 @@ void tea_exchange(const int* fields, int depth) {
             tea_unpack_buffers(fields, depth, CHUNK_RIGHT, chunk.right_rcv_buffer.data(), lr_offset.data());
     }
 
-    // --- PHASE 2 : VERTICAL EXCHANGE (BOTTOM / TOP) ---
+    // VERTICAL EXCHANGE (BOTTOM / TOP) 
     msg_count = 0; 
     if (chunk.chunk_neighbours[CHUNK_BOTTOM] != EXTERNAL_FACE) {
         tea_pack_buffers(fields, depth, CHUNK_BOTTOM, chunk.bottom_snd_buffer.data(), bt_offset.data());
@@ -258,7 +254,7 @@ void tea_exchange(const int* fields, int depth) {
     }
 }
 
-// Low-level MPI Isend/Irecv wrappers for each cardinal direction
+
 void tea_send_recv_message_left(double* snd, double* rcv, int size, int tag_s, int tag_r, MPI_Request* req_s, MPI_Request* req_r) {
     int dest = chunk.chunk_neighbours[CHUNK_LEFT];
     MPI_Isend(snd, size, MPI_DOUBLE, dest, tag_s, mpi_cart_comm, req_s);

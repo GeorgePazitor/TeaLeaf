@@ -5,11 +5,7 @@
 
 using namespace TeaLeaf;
 
-/**
- * Copies cell data between the left and right boundaries of adjacent tiles.
- * This synchronizes the ghost zones (halos) so that stencils can be calculated 
- * across tile interfaces.
- */
+//copies cell data between the left and right boundaries of adjacent tiles and handles the vertical synchronization of the grid.
 static void update_internal_halo_cell_left_right(
     int x_min_left, int x_max_left, int y_min_left, int y_max_left,
     double* mesh_left,
@@ -18,21 +14,19 @@ static void update_internal_halo_cell_left_right(
     int halo_depth,
     int depth)
 {
-    // Calculate memory stride (width) including the halo padding
     int width_left  = (x_max_left - x_min_left + 1) + 2 * halo_depth;
     int width_right = (x_max_right - x_min_right + 1) + 2 * halo_depth;
 
-    // Macros to map 2D (x,y) coordinates to 1D array indices based on tile local origins
     #define IDX_L(x, y) ((y - (y_min_left - halo_depth)) * width_left + (x - (x_min_left - halo_depth)))
     #define IDX_R(x, y) ((y - (y_min_right - halo_depth)) * width_right + (x - (x_min_right - halo_depth)))
 
-    // Iterate through the shared boundary strip
+    // iterate through the shared boundary strip
     for (int k = y_min_left - depth; k <= y_max_left + depth; ++k) {
         for (int j = 1; j <= depth; ++j) {
-            // Copy right tile's interior edge to left tile's halo
+            
             mesh_right[IDX_R(x_min_right - j, k)] = mesh_left[IDX_L(x_max_left - j + 1, k)];
-            // Copy left tile's interior edge to right tile's halo
             mesh_left[IDX_L(x_max_left + j, k)]  = mesh_right[IDX_R(x_min_right + j - 1, k)];
+
         }
     }
 
@@ -40,10 +34,8 @@ static void update_internal_halo_cell_left_right(
     #undef IDX_R
 }
 
-/**
- * Copies cell data between the bottom and top boundaries of adjacent tiles.
- * Handles the vertical synchronization of the grid.
- */
+
+//copies cell data between the bottom and top boundaries of adjacent tiles and handles the vertical synchronization of the grid.
 static void update_internal_halo_cell_bottom_top(
     int x_min_bot, int x_max_bot, int y_min_bot, int y_max_bot,
     double* mesh_bot,
@@ -60,9 +52,8 @@ static void update_internal_halo_cell_bottom_top(
 
     for (int k = 1; k <= depth; ++k) {
         for (int j = x_min_bot - depth; j <= x_max_bot + depth; ++j) {
-            // Copy bottom tile's interior edge to top tile's halo
+
             mesh_top[IDX_T(j, y_min_top - k)]   = mesh_bot[IDX_B(j, y_max_bot - k + 1)];
-            // Copy top tile's interior edge to bottom tile's halo
             mesh_bot[IDX_B(j, y_max_bot + k)]   = mesh_top[IDX_T(j, y_min_top + k - 1)];
         }
     }
@@ -71,10 +62,8 @@ static void update_internal_halo_cell_bottom_top(
     #undef IDX_T
 }
 
-/**
- * Kernel wrapper for Horizontal (Left/Right) halo updates.
- * Dispatches the copy operation for all active simulation fields.
- */
+
+// kernel wrapper for horizontal left/right halo updates.
 void update_internal_halo_left_right_kernel(
     int x_min_left, int x_max_left, int y_min_left, int y_max_left,
     double* density_l, double* energy0_l, double* energy1_l, double* u_l, double* p_l, 
@@ -88,7 +77,7 @@ void update_internal_halo_left_right_kernel(
     const int* fields,
     int depth)
 {
-    // Check field flags to update only the necessary data buffers
+    //check field flags to update only the necessary data buffers
     if (fields[FIELD_DENSITY])   update_internal_halo_cell_left_right(x_min_left,x_max_left,y_min_left,y_max_left,density_l,x_min_right,x_max_right,y_min_right,y_max_right,density_r,halo_exchange_depth,depth);
     if (fields[FIELD_ENERGY0])   update_internal_halo_cell_left_right(x_min_left,x_max_left,y_min_left,y_max_left,energy0_l,x_min_right,x_max_right,y_min_right,y_max_right,energy0_r,halo_exchange_depth,depth);
     if (fields[FIELD_ENERGY1])   update_internal_halo_cell_left_right(x_min_left,x_max_left,y_min_left,y_max_left,energy1_l,x_min_right,x_max_right,y_min_right,y_max_right,energy1_r,halo_exchange_depth,depth);
@@ -102,10 +91,8 @@ void update_internal_halo_left_right_kernel(
     if (fields[FIELD_DI])        update_internal_halo_cell_left_right(x_min_left,x_max_left,y_min_left,y_max_left,di_l,x_min_right,x_max_right,y_min_right,y_max_right,di_r,halo_exchange_depth,depth);
 }
 
-/**
- * Kernel wrapper for Vertical (Bottom/Top) halo updates.
- * Dispatches the copy operation for all active simulation fields.
- */
+
+// kernel wrapper for vertical bottom/top halo updates.
 void update_internal_halo_bottom_top_kernel(
     int x_min_bot,int x_max_bot,int y_min_bot,int y_max_bot,
     double* density_b,double* energy0_b,double* energy1_b,double* u_b,double* p_b,

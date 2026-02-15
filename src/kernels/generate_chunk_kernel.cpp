@@ -4,8 +4,9 @@
 
 /**
  * Initializes the physical fields (density, energy) based on predefined states.
- * States are applied as overlays: State 1 is the background, and subsequent 
- * states (2 to N) overwrite the background if the cell falls within their geometry.
+ * States are applied with overlapping logic:
+ *  state 1 is the first applied in the whole domain (it is the background) 
+ *  states 2 to N overwrite the background if the cell falls within their geometry
  */
 void generate_chunk_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo_depth,
@@ -18,16 +19,15 @@ void generate_chunk_kernel(
     double* state_radius, int* state_geometry, 
     int g_rect, int g_circ, int g_point) 
 {
-    // Width calculation for 1D mapping of 2D buffers, including halo zones.
     int width = (x_max + halo_depth) - (x_min - halo_depth) + 1;
 
-    // Macro for 2D-to-1D mapping of field arrays (density, energy, etc.)
+    //row-major mapping of field arrays: density, energy, ...
     #define FIELD_IDX(j, k) ((k - (y_min - halo_depth)) * width + (j - (x_min - halo_depth)))
     
-    // Macro for coordinate arrays (vertex/cell), accounting for the -2 padding offset.
+    //mapping for coordinate arrays, vertex,cell, accounting for the 2 padding offset.
     #define V_IDX(p, p_min) (p - (p_min - 2)) 
 
-    // Every cell in the chunk (including halos) is set to the base state.
+    //set the background everywhere 
     #pragma omp parallel for collapse(2)
     for (int k = y_min - halo_depth; k <= y_max + halo_depth; ++k) {
         for (int j = x_min - halo_depth; j <= x_max + halo_depth; ++j) {
@@ -36,30 +36,26 @@ void generate_chunk_kernel(
             energy0[idx] = state_energy[1];
         }
     }
-
-    // Higher index states act as "stickers" placed over the background.
+    //set the 2 to N subsequent states one on top of the other (the last has higher priority if overlapping)
     for (int s = 2; s <= number_of_states; ++s) {
         #pragma omp parallel for collapse(2)
         for (int k = y_min - halo_depth; k <= y_max + halo_depth; ++k) {
             for (int j = x_min - halo_depth; j <= x_max + halo_depth; ++j) {
                 
                 bool apply = false;
-
-                // Case: Rectangular Geometry
+                //rectangulare geom
                 if (state_geometry[s] == g_rect) {
-                    // Check if cell is within the physical domain and intersects state bounds
                     if (j >= x_min && j <= x_max && k >= y_min && k <= y_max) {
                         int j_idx = V_IDX(j, x_min);
                         int k_idx = V_IDX(k, y_min);
                         
-                        // Intersection test using cell vertices
                         if (vertexx[j_idx + 1] >= state_xmin[s] && vertexx[j_idx] < state_xmax[s] &&
                             vertexy[k_idx + 1] >= state_ymin[s] && vertexy[k_idx] < state_ymax[s]) {
                             apply = true;
                         }
                     }
                 } 
-                // Case: Circular Geometry
+                //circular geom
                 else if (state_geometry[s] == g_circ) {
                     int j_idx = V_IDX(j, x_min);
                     int k_idx = V_IDX(k, y_min);
@@ -69,7 +65,7 @@ void generate_chunk_kernel(
                         apply = true;
                     }
                 }
-                // Case: Point Geometry
+                //point geom
                 else if (state_geometry[s] == g_point) {
                     int j_idx = V_IDX(j, x_min);
                     int k_idx = V_IDX(k, y_min);
@@ -87,7 +83,7 @@ void generate_chunk_kernel(
         }
     }
 
-    // u0 = density * energy0. This is the value actually used by the solver.
+    // u0 = density * energy0 ( physical quantity actually used by the solverm ).
     #pragma omp parallel for collapse(2)
     for (int k = y_min - halo_depth; k <= y_max + halo_depth; ++k) {
         for (int j = x_min - halo_depth; j <= x_max + halo_depth; ++j) {
