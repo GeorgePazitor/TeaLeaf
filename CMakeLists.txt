@@ -41,6 +41,7 @@ set(SRC_FILES
     src/tea_leaf_common.cpp
     src/field_summary.cpp
     src/tea_leaf_jacobi.cpp
+    src/tea_leaf_cg.cpp
     src/visit.cpp
     src/calc_dt.cpp
 )
@@ -56,6 +57,7 @@ set(KERNEL_FILES
     src/kernels/update_internal_halo_kernel.cpp
     src/kernels/tea_leaf_common_kernel.cpp
     src/kernels/tea_leaf_jacobi_kernel.cpp
+    src/kernels/tea_leaf_cg_kernel.cpp
 )
 
 # Combine all library sources
@@ -85,8 +87,10 @@ set(LIB_HEADERS
     src/visit.h
     src/calc_dt.h
     src/tea_leaf_jacobi.h
+    src/tea_leaf_cg.h
     src/kernels/tea_leaf_common_kernel.h
     src/kernels/tea_leaf_jacobi_kernel.h
+    src/kernels/tea_leaf_cg_kernel.h
     src/kernels/generate_chunk_kernel.h
     src/kernels/initialise_chunk_kernel.h
     src/kernels/pack_kernel.h

@@ -8,7 +8,7 @@ namespace TeaLeaf {
 void tea_leaf_jacobi_solve(double& error) {
     double total_tile_error = 0.0;
 
-    // OpenMP sur les tiles (PRIVATE tile_error pour la réduction)
+    // OpenMP sur les tiles (private tile_error pour la réduction)
     #pragma omp parallel reduction(+:total_tile_error)
     {
         #pragma omp for

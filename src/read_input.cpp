@@ -261,6 +261,10 @@ void read_input() {
                 profiler_on = true;
                 if (parallel.boss) *g_out << " Profiler on\n";
             }
+            else if (word == "verbose_on") {
+                verbose_on = true;
+                if (parallel.boss) *g_out << " Verbose on\n";
+            }
             else if (word == "state") {
                 // Read State ID
                 int id = parser.get_int();
