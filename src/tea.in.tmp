@@ -19,4 +19,5 @@ tl_eps=1.0e-15
 tl_preconditioner_type=none
 halo_depth=2
 summary_frequency=1
+visit_frequency=1
 *endtea

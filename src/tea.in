@@ -25,4 +25,5 @@ tl_preconditioner_type=none
 halo_depth=2
 #verbose_on
 summary_frequency=1
+visit_frequency=1
 *endtea
