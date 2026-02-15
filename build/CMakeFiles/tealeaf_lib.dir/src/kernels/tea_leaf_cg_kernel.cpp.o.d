@@ -103,7 +103,8 @@ CMakeFiles/tealeaf_lib.dir/src/kernels/tea_leaf_cg_kernel.cpp.o: \
  /usr/include/c++/12/bits/stl_function.h \
  /usr/include/c++/12/backward/binders.h \
  /usr/include/c++/12/bits/range_access.h \
- /usr/include/c++/12/bits/vector.tcc /home/george/Code/TeaLeaf/src/data.h \
+ /usr/include/c++/12/bits/vector.tcc \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/mpicxx.h \
@@ -217,5 +218,5 @@ CMakeFiles/tealeaf_lib.dir/src/kernels/tea_leaf_cg_kernel.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare

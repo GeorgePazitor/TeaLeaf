@@ -1,6 +1,6 @@
 CMakeFiles/tealeaf_lib.dir/src/initialise_chunk.cpp.o: \
  /home/george/Code/TeaLeaf/src/initialise_chunk.cpp \
- /usr/include/stdc-predef.h /home/george/Code/TeaLeaf/src/tea.h \
+ /usr/include/stdc-predef.h /home/george/Code/TeaLeaf/src/include/tea.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
@@ -191,12 +191,12 @@ CMakeFiles/tealeaf_lib.dir/src/initialise_chunk.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/data.h /usr/include/c++/12/vector \
+ /home/george/Code/TeaLeaf/src/include/data.h /usr/include/c++/12/vector \
  /usr/include/c++/12/bits/stl_uninitialized.h \
  /usr/include/c++/12/bits/stl_vector.h \
  /usr/include/c++/12/bits/stl_bvector.h \
  /usr/include/c++/12/bits/vector.tcc \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare \
- /home/george/Code/TeaLeaf/src/kernels/initialise_chunk_kernel.h \
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare \
+ /home/george/Code/TeaLeaf/src/include/kernels/initialise_chunk_kernel.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/omp.h

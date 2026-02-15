@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/home/george/Code/TeaLeaf/src -I/home/george/Code/TeaLeaf/src/kernels -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi
 
-CXX_FLAGS = -O3 -DNDEBUG -O3 -march=native -Wall -Wextra -fopenmp -std=c++17
+CXX_FLAGS = -O3 -DNDEBUG -O3 -march=native -Wall -Wextra -ffast-math -funroll-loops -fomit-frame-pointer -fopenmp -std=c++17
 

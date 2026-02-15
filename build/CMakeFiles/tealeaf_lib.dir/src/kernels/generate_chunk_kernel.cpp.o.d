@@ -1,7 +1,7 @@
 CMakeFiles/tealeaf_lib.dir/src/kernels/generate_chunk_kernel.cpp.o: \
  /home/george/Code/TeaLeaf/src/kernels/generate_chunk_kernel.cpp \
  /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/kernels/generate_chunk_kernel.h \
+ /home/george/Code/TeaLeaf/src/include/kernels/generate_chunk_kernel.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/omp.h /usr/include/c++/12/cmath \
  /usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \

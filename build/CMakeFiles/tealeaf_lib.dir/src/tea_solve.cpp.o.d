@@ -1,6 +1,6 @@
 CMakeFiles/tealeaf_lib.dir/src/tea_solve.cpp.o: \
  /home/george/Code/TeaLeaf/src/tea_solve.cpp /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/tea.h \
+ /home/george/Code/TeaLeaf/src/include/tea.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
@@ -191,18 +191,20 @@ CMakeFiles/tealeaf_lib.dir/src/tea_solve.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/data.h /usr/include/c++/12/vector \
+ /home/george/Code/TeaLeaf/src/include/data.h /usr/include/c++/12/vector \
  /usr/include/c++/12/bits/stl_uninitialized.h \
  /usr/include/c++/12/bits/stl_vector.h \
  /usr/include/c++/12/bits/stl_bvector.h \
  /usr/include/c++/12/bits/vector.tcc \
- /home/george/Code/TeaLeaf/src/global_mpi.h \
- /home/george/Code/TeaLeaf/src/update_halo.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare /home/george/Code/TeaLeaf/src/definitions.h \
- /home/george/Code/TeaLeaf/src/tea_leaf_common.h \
- /home/george/Code/TeaLeaf/src/tea_leaf_jacobi.h \
- /home/george/Code/TeaLeaf/src/tea_leaf_cg.h /usr/include/c++/12/cmath \
- /usr/include/math.h /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ /home/george/Code/TeaLeaf/src/include/global_mpi.h \
+ /home/george/Code/TeaLeaf/src/include/update_halo.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare \
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /home/george/Code/TeaLeaf/src/include/tea_leaf_common.h \
+ /home/george/Code/TeaLeaf/src/include/tea_leaf_jacobi.h \
+ /home/george/Code/TeaLeaf/src/include/tea_leaf_cg.h \
+ /usr/include/c++/12/cmath /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \

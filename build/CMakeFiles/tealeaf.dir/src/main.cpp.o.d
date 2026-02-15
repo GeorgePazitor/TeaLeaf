@@ -1,6 +1,6 @@
 CMakeFiles/tealeaf.dir/src/main.cpp.o: \
  /home/george/Code/TeaLeaf/src/main.cpp /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/data.h \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
@@ -194,7 +194,8 @@ CMakeFiles/tealeaf.dir/src/main.cpp.o: \
  /usr/include/c++/12/vector /usr/include/c++/12/bits/stl_uninitialized.h \
  /usr/include/c++/12/bits/stl_vector.h \
  /usr/include/c++/12/bits/stl_bvector.h \
- /usr/include/c++/12/bits/vector.tcc /home/george/Code/TeaLeaf/src/tea.h \
- /home/george/Code/TeaLeaf/src/initialise.h \
- /home/george/Code/TeaLeaf/src/diffuse.h \
+ /usr/include/c++/12/bits/vector.tcc \
+ /home/george/Code/TeaLeaf/src/include/tea.h \
+ /home/george/Code/TeaLeaf/src/include/initialise.h \
+ /home/george/Code/TeaLeaf/src/include/diffuse.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/omp.h

@@ -1,7 +1,7 @@
 CMakeFiles/tealeaf_lib.dir/src/kernels/update_internal_halo_kernel.cpp.o: \
  /home/george/Code/TeaLeaf/src/kernels/update_internal_halo_kernel.cpp \
  /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/kernels/update_internal_halo_kernel.h \
+ /home/george/Code/TeaLeaf/src/include/kernels/update_internal_halo_kernel.h \
  /usr/include/c++/12/vector /usr/include/c++/12/bits/stl_algobase.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
@@ -46,7 +46,8 @@ CMakeFiles/tealeaf_lib.dir/src/kernels/update_internal_halo_kernel.cpp.o: \
  /usr/include/c++/12/bits/stl_function.h \
  /usr/include/c++/12/backward/binders.h \
  /usr/include/c++/12/bits/range_access.h \
- /usr/include/c++/12/bits/vector.tcc /home/george/Code/TeaLeaf/src/data.h \
+ /usr/include/c++/12/bits/vector.tcc \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
@@ -196,9 +197,9 @@ CMakeFiles/tealeaf_lib.dir/src/kernels/update_internal_halo_kernel.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare /usr/include/c++/12/algorithm \
- /usr/include/c++/12/bits/stl_algo.h \
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare \
+ /usr/include/c++/12/algorithm /usr/include/c++/12/bits/stl_algo.h \
  /usr/include/c++/12/bits/algorithmfwd.h \
  /usr/include/c++/12/bits/stl_heap.h \
  /usr/include/c++/12/bits/stl_tempbuf.h \

@@ -1,6 +1,7 @@
 CMakeFiles/tealeaf_lib.dir/src/initialise.cpp.o: \
  /home/george/Code/TeaLeaf/src/initialise.cpp /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/initialise.h /usr/include/c++/12/string \
+ /home/george/Code/TeaLeaf/src/include/initialise.h \
+ /usr/include/c++/12/string \
  /usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -156,7 +157,7 @@ CMakeFiles/tealeaf_lib.dir/src/initialise.cpp.o: \
  /usr/include/x86_64-linux-gnu/c++/12/bits/c++io.h \
  /usr/include/c++/12/bits/fstream.tcc \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/omp.h \
- /home/george/Code/TeaLeaf/src/data.h \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/mpicxx.h \
@@ -203,6 +204,7 @@ CMakeFiles/tealeaf_lib.dir/src/initialise.cpp.o: \
  /usr/include/c++/12/bits/stl_vector.h \
  /usr/include/c++/12/bits/stl_bvector.h \
  /usr/include/c++/12/bits/vector.tcc \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare /home/george/Code/TeaLeaf/src/read_input.h \
- /home/george/Code/TeaLeaf/src/start.h
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare \
+ /home/george/Code/TeaLeaf/src/include/read_input.h \
+ /home/george/Code/TeaLeaf/src/include/start.h

@@ -1,22 +1,8 @@
 #pragma once
-//using namespace TeaLeaf;
 
-// ----------------------------------------------------------------------------
-// Helper Macros for Indexing
-// ----------------------------------------------------------------------------
-// ASSUMPTION: The grid is stored in a 1D array. 
-// You must adjust 'row_stride' to match your actual allocated width 
-// (e.g., x_max - x_min + 2*halo + 1).
-// Below assumes Row-Major (y * stride + x) common in C++. 
-// If you are keeping Fortran Column-Major in C++, swap x and y.
-
-// Note: 'stride' here assumes the allocated width of the field.
-// We approximate stride based on x_min/x_max + halo. 
-// A safer way is to pass the 'stride' explicitly from the calling code.
-// For this translation, I calculate it assuming standard TeaLeaf layout.
 #include <vector>
 #include <array>
-#include "data.h"
+#include "include/data.h"
 #define GET_IDX(x, y, stride) ((y) * (stride) + (x))
 
 
@@ -32,7 +18,6 @@ typedef void (*pack_func_t)(
     int buffer_offset, int edge_minus, int edge_plus
 );
 
-// Forward declarations of specific kernels
 void tea_pack_message_left(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
 void tea_unpack_message_left(int, int, int, int, int, double*, double*, int, int, int, int, int, int);
 void tea_pack_message_right(int, int, int, int, int, double*, double*, int, int, int, int, int, int);

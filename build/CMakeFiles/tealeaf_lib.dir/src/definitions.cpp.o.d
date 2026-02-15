@@ -1,7 +1,7 @@
 CMakeFiles/tealeaf_lib.dir/src/definitions.cpp.o: \
  /home/george/Code/TeaLeaf/src/definitions.cpp /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/vector \
- /usr/include/c++/12/bits/stl_algobase.h \
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/vector /usr/include/c++/12/bits/stl_algobase.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
  /usr/include/features.h /usr/include/features-time64.h \

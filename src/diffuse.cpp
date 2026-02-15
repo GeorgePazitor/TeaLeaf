@@ -6,22 +6,22 @@
 #include <omp.h>
 #include <chrono>
 
-#include "diffuse.h"
-#include "timestep.h"
-#include "tea_solve.h"
-#include "data.h"
-#include "definitions.h"
-#include "timestep.h"
-#include "tea_solve.h"
-#include "field_summary.h"
-#include "visit.h"
-#include "global_mpi.h"
-#include "tea.h"
-
+#include "include/diffuse.h"
+#include "include/timestep.h"
+#include "include/tea_solve.h"
+#include "include/data.h"
+#include "include/definitions.h"
+#include "include/field_summary.h"
+#include "include/visit.h"
+#include "include/global_mpi.h"
+#include "include/tea.h"
 
 namespace TeaLeaf {
 
-
+/**
+ * The main time-stepping loop. Controls the simulation flow, 
+ * output frequency, and performance profiling.
+ */
 void diffuse() {
     int loc_idx = 0;
     double timer_start, wall_clock, step_clock;
@@ -30,22 +30,26 @@ void diffuse() {
     double first_step = 0.0, second_step = 0.0;
     double kernel_total;
     
-    // Vecteur pour stocker les totaux de chaque tâche MPI (parallel.max_task)
+    // Vector to collect profiling data from all MPI tasks
     std::vector<double> totals(parallel.max_task);
 
-    timer_start = timer(); // timer() serait votre fonction de timing
+    timer_start = timer(); 
     second_step = 0.0;
 
+    // --- Main Simulation Loop ---
     while (true) {
         step_time = timer();
         step++;
 
-        timestep();    // Calcul du prochain dt
-        tea_leaf();    // Cœur du solveur de diffusion
+        // Calculate next dt based on stability criteria
+        timestep();    
+        
+        // Execute the diffusion solver (CG, Jacobi, PPCG, or Cheby)
+        tea_leaf();    
         
         timee += dt;
 
-        // Rapports périodiques
+        // Periodic reporting and visualization
         if (summary_frequency != 0 && (step % summary_frequency == 0)) {
             field_summary();
         }
@@ -53,11 +57,11 @@ void diffuse() {
             visit();
         }
 
-        // Mesure du coût initial (overhead)
+        // Measure overhead (step 1 is usually slower due to initial allocations/caching)
         if (step == 1) first_step = timer() - step_time;
         if (step == 2) second_step = timer() - step_time;
 
-        // Sorties console pour le processus maître
+        // Progress reporting for the boss rank
         if (parallel.boss) {
             wall_clock = timer() - timer_start;
             step_clock = timer() - step_time;
@@ -67,12 +71,10 @@ void diffuse() {
             grind_time = wall_clock / (rstep * cells);
             step_grind = step_clock / cells;
 
-             *g_out << "Wall clock " << wall_clock << std::endl;
-             *g_out << "Average time per cell " << grind_time << std::endl;
-             *g_out << "Step time per cell    " << step_grind << std::endl;
+            *g_out << "Step " << step << " time " << step_clock  << std::endl;
         }
 
-        // Condition de sortie
+        // Exit conditions: time limit or step limit reached
         if (timee + g_small > end_time || step >= end_step) {
             complete = true;
             field_summary();
@@ -80,30 +82,30 @@ void diffuse() {
 
             wall_clock = timer() - timer_start;
             if (parallel.boss) {
-                 *g_out << "\nCalculation complete\nTea is finishing" << std::endl;
-                 *g_out << "First step overhead " << (first_step - second_step) << std::endl;
-                 *g_out << "Wall clock " << wall_clock << std::endl;
+                *g_out << "\nCalculation complete\nTea is finishing" << std::endl;
+                *g_out << "First step overhead " << (first_step - second_step) << std::endl;
+                *g_out << "Wall clock " << wall_clock << std::endl;
             }
-            break; // Équivalent de EXIT en Fortran
+            break; 
         }
     }
 
-    // --- Section Profiling ---
+    // --- Performance Profiling Section ---
     if (profiler_on) {
         kernel_total = profiler.timestep + profiler.halo_exchange + profiler.summary + 
                        profiler.visit + profiler.tea_init + profiler.set_field + 
                        profiler.tea_solve + profiler.tea_reset + profiler.dot_product + 
                        profiler.halo_update + profiler.internal_halo_update;
 
-        // Collecte des données sur tous les rangs MPI
+        // Gather total time from all ranks to find the "bottleneck" rank
         tea_allgather(kernel_total, totals);
 
-        // Recherche du max (MAXLOC en Fortran)
+        // Find the index of the rank that spent the most time (max load)
         auto it = std::max_element(totals.begin(), totals.begin() + parallel.max_task);
         loc_idx = std::distance(totals.begin(), it);
         kernel_total = totals[loc_idx];
 
-        // Synchronisation de toutes les métriques sur le rang qui a pris le plus de temps
+        // Sync all metrics based on the slowest rank's data
         auto sync_metric = [&](double &metric) {
             tea_allgather(metric, totals);
             metric = totals[loc_idx];
@@ -126,10 +128,12 @@ void diffuse() {
                 std::cout << std::left << std::setw(23) << label << ":" 
                           << std::fixed << std::setprecision(4) << std::right 
                           << std::setw(16) << val 
-                          << std::setw(16) << (100.0 * val / wall_clock) << std::endl;
+                          << std::setw(16) << (100.0 * val / wall_clock) << "%" << std::endl;
             };
 
-            std::cout << "\nProfiler Output                                 Time        Percentage" << std::endl;
+            std::cout << "\nProfiler Output (Slowest Rank " << loc_idx << ")" << std::endl;
+            std::cout << "------------------------------------------------------------" << std::endl;
+            std::cout << "Kernel                  |      Time (s)    |   Percentage" << std::endl;
             print_line("Timestep", profiler.timestep);
             print_line("MPI Halo Exchange", profiler.halo_exchange);
             print_line("Self Halo Update", profiler.halo_update);
@@ -142,11 +146,12 @@ void diffuse() {
             print_line("Tea Reset", profiler.tea_reset);
             print_line("Set Field", profiler.set_field);
             print_line("Total", kernel_total);
-            print_line("The Rest", wall_clock - kernel_total);
+            print_line("System/Misc", wall_clock - kernel_total);
         }
     }
 
+    // Clean up MPI and finalize
     tea_finalize();
 }
 
-}
+} // namespace TeaLeaf

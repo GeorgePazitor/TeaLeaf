@@ -1,6 +1,6 @@
 CMakeFiles/tealeaf_lib.dir/src/data.cpp.o: \
  /home/george/Code/TeaLeaf/src/data.cpp /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/data.h \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \

@@ -1,7 +1,7 @@
-#include "tea.h"
-#include "data.h"
-#include "definitions.h"
-#include "kernels/tea_leaf_cg_kernel.h"
+#include "include/tea.h"
+#include "include/data.h"
+#include "include/definitions.h"
+#include "include/kernels/tea_leaf_cg_kernel.h"
 
 namespace TeaLeaf {
 

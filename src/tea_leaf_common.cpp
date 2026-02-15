@@ -4,35 +4,42 @@
 #include <array>
 #include <iostream>
 
-#include "data.h"
-#include "tea.h"
-#include "definitions.h"
-#include "kernels/tea_leaf_common_kernel.h" 
+#include "include/data.h"
+#include "include/tea.h"
+#include "include/definitions.h"
+#include "include/kernels/tea_leaf_common_kernel.h" 
 
 namespace TeaLeaf {
 
-// --- INITIALISATION COMMUNE ---
+/**
+ * Common initialization for all solvers.
+ * Sets up coefficients (rx, ry), conductivity fields (Kx, Ky), and initial vectors.
+ */
 void tea_leaf_init_common() {
+    #ifdef OMP
     #pragma omp parallel
+    #endif
     {
         std::array<bool, 4> zero_boundary;
 
+        #ifdef OMP
         #pragma omp for
+        #endif
         for (int t = 0; t < tiles_per_task; ++t) {
             auto& tile = chunk.tiles[t];
             auto& f = tile.field;
 
-            // Calcul de rx et ry : conforme au Fortran utilisant celldx(x_min)
-            // En C++, l'index 0 correspond au premier élément de la grille utile
+            // rx = dt / dx^2. Used to scale diffusion in X
             f.rx = dt / (f.celldx[0] * f.celldx[0]);
             f.ry = dt / (f.celldy[0] * f.celldy[0]);
 
-            // Détection des faces externes du domaine global
+            // Determine if tile faces are on the edge of the GLOBAL domain
             for (int i = 0; i < 4; ++i) {
                 zero_boundary[i] = (tile.tile_neighbours[i] == EXTERNAL_FACE && 
                                     chunk.chunk_neighbours[i] == EXTERNAL_FACE);
             }
 
+            // Calls the lower-level kernel to populate Kx, Ky and initial U vectors
             tea_leaf_common_init_kernel(
                 f.x_min, f.x_max, f.y_min, f.y_max,
                 chunk.halo_exchange_depth,
@@ -48,9 +55,14 @@ void tea_leaf_init_common() {
     }
 }
 
-// --- CALCUL DU RÉSIDU ---
+/**
+ * Calculates the residual r = b - Ax.
+ * This tells us how far the current solution is from the exact solution.
+ */
 void tea_leaf_calc_residual() {
+    #ifdef OMP
     #pragma omp parallel for
+    #endif
     for (int t = 0; t < tiles_per_task; ++t) {
         auto& f = chunk.tiles[t].field;
         tea_leaf_calc_residual_kernel(
@@ -62,18 +74,25 @@ void tea_leaf_calc_residual() {
     }
 }
 
-// --- CALCUL DE LA NORME L2 ---
+/**
+ * Calculates the L2 norm of a vector (u0 or residual r).
+ * Used to monitor convergence during iterations.
+ */
 void tea_leaf_calc_2norm(int norm_array, double& norm) {
     double total_norm = 0.0;
 
+    #ifdef OMP
     #pragma omp parallel reduction(+:total_norm)
+    #endif
     {
+        #ifdef OMP
         #pragma omp for
+        #endif
         for (int t = 0; t < tiles_per_task; ++t) {
             double tile_norm = 0.0;
             auto& f = chunk.tiles[t].field;
 
-            // Sélection du tableau selon norm_array (0: u0, 1: r)
+            // Select array based on norm_array index (0: u0, 1: r)
             const std::vector<double>& arr = (norm_array == 0) ? f.u0 : f.vector_r;
 
             tea_leaf_calc_2norm_kernel(
@@ -87,9 +106,13 @@ void tea_leaf_calc_2norm(int norm_array, double& norm) {
     norm = total_norm;
 }
 
-// --- FINALISATION ---
+/**
+ * Copies the final solution back into the energy field.
+ */
 void tea_leaf_finalise() {
+    #ifdef OMP
     #pragma omp parallel for
+    #endif
     for (int t = 0; t < tiles_per_task; ++t) {
         auto& f = chunk.tiles[t].field;
         tea_leaf_kernel_finalise(

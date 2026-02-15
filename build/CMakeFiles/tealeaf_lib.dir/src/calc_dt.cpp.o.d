@@ -1,7 +1,7 @@
 CMakeFiles/tealeaf_lib.dir/src/calc_dt.cpp.o: \
  /home/george/Code/TeaLeaf/src/calc_dt.cpp /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/calc_dt.h \
- /home/george/Code/TeaLeaf/src/data.h \
+ /home/george/Code/TeaLeaf/src/include/calc_dt.h \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
@@ -196,5 +196,5 @@ CMakeFiles/tealeaf_lib.dir/src/calc_dt.cpp.o: \
  /usr/include/c++/12/bits/stl_vector.h \
  /usr/include/c++/12/bits/stl_bvector.h \
  /usr/include/c++/12/bits/vector.tcc \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare

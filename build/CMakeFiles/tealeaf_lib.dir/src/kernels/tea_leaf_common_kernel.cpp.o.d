@@ -1,7 +1,7 @@
 CMakeFiles/tealeaf_lib.dir/src/kernels/tea_leaf_common_kernel.cpp.o: \
  /home/george/Code/TeaLeaf/src/kernels/tea_leaf_common_kernel.cpp \
  /usr/include/stdc-predef.h \
- /home/george/Code/TeaLeaf/src/kernels/tea_leaf_common_kernel.h \
+ /home/george/Code/TeaLeaf/src/include/kernels/tea_leaf_common_kernel.h \
  /usr/include/c++/12/vector /usr/include/c++/12/bits/stl_algobase.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
@@ -48,7 +48,7 @@ CMakeFiles/tealeaf_lib.dir/src/kernels/tea_leaf_common_kernel.cpp.o: \
  /usr/include/c++/12/bits/range_access.h \
  /usr/include/c++/12/bits/vector.tcc /usr/include/c++/12/array \
  /usr/include/c++/12/compare \
- /home/george/Code/TeaLeaf/src/kernels/../data.h \
+ /home/george/Code/TeaLeaf/src/include/kernels/../data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
@@ -198,8 +198,9 @@ CMakeFiles/tealeaf_lib.dir/src/kernels/tea_leaf_common_kernel.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/cmath \
- /usr/include/math.h /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/cmath /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \

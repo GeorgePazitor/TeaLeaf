@@ -1,7 +1,8 @@
 CMakeFiles/tealeaf_lib.dir/src/field_summary.cpp.o: \
  /home/george/Code/TeaLeaf/src/field_summary.cpp \
- /usr/include/stdc-predef.h /home/george/Code/TeaLeaf/src/field_summary.h \
- /home/george/Code/TeaLeaf/src/tea.h \
+ /usr/include/stdc-predef.h \
+ /home/george/Code/TeaLeaf/src/include/field_summary.h \
+ /home/george/Code/TeaLeaf/src/include/tea.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
@@ -192,16 +193,16 @@ CMakeFiles/tealeaf_lib.dir/src/field_summary.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/data.h /usr/include/c++/12/vector \
+ /home/george/Code/TeaLeaf/src/include/data.h /usr/include/c++/12/vector \
  /usr/include/c++/12/bits/stl_uninitialized.h \
  /usr/include/c++/12/bits/stl_vector.h \
  /usr/include/c++/12/bits/stl_bvector.h \
  /usr/include/c++/12/bits/vector.tcc \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare \
- /home/george/Code/TeaLeaf/src/kernels/field_summary_kernel.h \
- /home/george/Code/TeaLeaf/src/global_mpi.h /usr/include/c++/12/iomanip \
- /usr/include/c++/12/locale \
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare \
+ /home/george/Code/TeaLeaf/src/include/kernels/field_summary_kernel.h \
+ /home/george/Code/TeaLeaf/src/include/global_mpi.h \
+ /usr/include/c++/12/iomanip /usr/include/c++/12/locale \
  /usr/include/c++/12/bits/locale_facets_nonio.h /usr/include/c++/12/ctime \
  /usr/include/x86_64-linux-gnu/c++/12/bits/time_members.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/messages_members.h \

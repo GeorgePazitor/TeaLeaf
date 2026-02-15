@@ -1,7 +1,7 @@
 #include <cmath>
 #include <vector>
-#include "data.h"
-#include "definitions.h"
+#include "include/data.h"
+#include "include/definitions.h"
 namespace TeaLeaf {
 
 

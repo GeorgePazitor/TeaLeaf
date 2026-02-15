@@ -1,14 +1,21 @@
-#include "tea.h"
-#include "data.h"
-#include "definitions.h"
-#include "generate_chunk_kernel.h"
+#include "include/tea.h"
+#include "include/data.h"
+#include "include/definitions.h"
+#include "include/kernels/generate_chunk_kernel.h"
 #include <vector>
 #include <omp.h>
 #include <algorithm>
 
+/**
+ * Populates the grid with physical properties (density, energy, temperature) 
+ * based on the geometric states defined in the input file.
+ */
 void generate_chunk() {
     using namespace TeaLeaf;
     
+    // Data Preparation
+    // Flatten state structures into contiguous vectors for efficient kernel access.
+    // This mapping converts the OO-style 'states' vector into arrays of primitives.
     int num_states = number_of_states; 
     std::vector<double> state_dens(num_states + 1), state_ener(num_states + 1);
     std::vector<double> state_x_min(num_states + 1), state_x_max(num_states + 1);
@@ -27,9 +34,14 @@ void generate_chunk() {
         state_geo[s]   = states[s].geometry;
     }
 
+    // Parallel Field Generation
+    // Process each tile in parallel to determine which state occupies which cell.
     #pragma omp parallel for
     for (int t = 0; t < tiles_per_task; ++t) {
         auto& tile = chunk.tiles[t];
+        
+        // The kernel evaluates geometric tests (rectangle, circle, point) 
+        // for every cell in the tile.
         generate_chunk_kernel(
             tile.field.x_min, tile.field.x_max, 
             tile.field.y_min, tile.field.y_max, 
@@ -46,7 +58,9 @@ void generate_chunk() {
             g_rect, g_circ, g_point
         );
 
-        // SYNC CRITIQUE : u doit être égal à u0 au début du solveur
+        // Field Synchronization
+        // Ensure the initial temperature field 'u' matches 'u0' before the solver starts.
+        // This is a critical step for the first iteration of the heat equation.
         std::copy(tile.field.u0.begin(), tile.field.u0.end(), tile.field.u.begin());
     }
 }

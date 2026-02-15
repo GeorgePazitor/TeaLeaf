@@ -195,10 +195,10 @@ CMakeFiles/tealeaf_lib.dir/src/diffuse.cpp.o: \
  /usr/lib/gcc/x86_64-linux-gnu/12/include/omp.h \
  /usr/include/c++/12/chrono /usr/include/c++/12/bits/chrono.h \
  /usr/include/c++/12/ratio /usr/include/c++/12/bits/parse_numbers.h \
- /home/george/Code/TeaLeaf/src/diffuse.h \
- /home/george/Code/TeaLeaf/src/timestep.h \
- /home/george/Code/TeaLeaf/src/tea_solve.h \
- /home/george/Code/TeaLeaf/src/data.h \
+ /home/george/Code/TeaLeaf/src/include/diffuse.h \
+ /home/george/Code/TeaLeaf/src/include/timestep.h \
+ /home/george/Code/TeaLeaf/src/include/tea_solve.h \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/mpicxx.h \
@@ -241,9 +241,9 @@ CMakeFiles/tealeaf_lib.dir/src/diffuse.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/definitions.h /usr/include/c++/12/array \
- /usr/include/c++/12/compare \
- /home/george/Code/TeaLeaf/src/field_summary.h \
- /home/george/Code/TeaLeaf/src/visit.h \
- /home/george/Code/TeaLeaf/src/global_mpi.h \
- /home/george/Code/TeaLeaf/src/tea.h
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /usr/include/c++/12/array /usr/include/c++/12/compare \
+ /home/george/Code/TeaLeaf/src/include/field_summary.h \
+ /home/george/Code/TeaLeaf/src/include/visit.h \
+ /home/george/Code/TeaLeaf/src/include/global_mpi.h \
+ /home/george/Code/TeaLeaf/src/include/tea.h

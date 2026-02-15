@@ -40,10 +40,8 @@ namespace TeaLeaf {
     extern double eps;
     extern int coefficient;
 
-
-    // error to run cg to before calculating eigenvalues
     extern double tl_ch_cg_epslim;
-    // do b-Ax after finishing to make sure solver actually converged
+
     extern int tl_ch_cg_presteps;
 
     extern bool tl_check_result;
@@ -90,7 +88,6 @@ namespace TeaLeaf {
 
     struct Field_type{
 
-        // 2D arrays stored as 1D vectors in row-major order
         std::vector<double> density, 
                             energy0, 
                             energy1, 
@@ -114,7 +111,6 @@ namespace TeaLeaf {
 
         std::vector<double> cellx, celly, vertexx, vertexy, celldx, celldy, vertexdx, vertexdy;
         
-        // 2D arrays stored as 1D vectors in row-major order
         std::vector<double> volume, xarea, yarea;
 
         int x_min, x_max, y_min, y_max;

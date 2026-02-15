@@ -178,7 +178,7 @@ CMakeFiles/tealeaf_lib.dir/src/tea_leaf_common.cpp.o: \
  /usr/include/c++/12/bits/basic_ios.tcc \
  /usr/include/c++/12/bits/ostream.tcc /usr/include/c++/12/istream \
  /usr/include/c++/12/bits/istream.tcc \
- /home/george/Code/TeaLeaf/src/data.h \
+ /home/george/Code/TeaLeaf/src/include/data.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/mpi_portable_platform.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/mpicxx.h \
@@ -221,6 +221,6 @@ CMakeFiles/tealeaf_lib.dir/src/tea_leaf_common.cpp.o: \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/info_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/win_inln.h \
  /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/ompi/mpi/cxx/file_inln.h \
- /home/george/Code/TeaLeaf/src/tea.h \
- /home/george/Code/TeaLeaf/src/definitions.h \
- /home/george/Code/TeaLeaf/src/kernels/tea_leaf_common_kernel.h
+ /home/george/Code/TeaLeaf/src/include/tea.h \
+ /home/george/Code/TeaLeaf/src/include/definitions.h \
+ /home/george/Code/TeaLeaf/src/include/kernels/tea_leaf_common_kernel.h
