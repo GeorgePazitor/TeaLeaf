@@ -1,5 +1,5 @@
 #include "include/read_input.h"
-
+#include "include/global_mpi.h"
 #include "include/tea.h"
 #include "include/data.h"
 #include "include/definitions.h"
@@ -316,6 +316,20 @@ void read_input() {
                 }
                 if (parallel.boss) *g_out << "\n";
             }
+            else if (word == "tl_preconditioner_type") {
+                std::string prec = parser.get_word();
+                if (prec == "jac_diag") {
+                    tl_preconditioner_type = TL_PREC_JAC_DIAG;
+                    if (parallel.boss) *g_out << " preconditioner type     jacobi diagonal\n";
+                } else if (prec == "jac_block") {
+                    tl_preconditioner_type = TL_PREC_JAC_BLOCK;
+                    if (parallel.boss) *g_out << " preconditioner type     jacobi block\n";
+                } else if (prec == "none") {
+                    tl_preconditioner_type = TL_PREC_NONE;
+                    if (parallel.boss) *g_out << " preconditioner type     none\n";
+                
+                }
+            }
         }
     }
 
@@ -327,6 +341,9 @@ void read_input() {
 
     if (chunk.halo_exchange_depth > 1 && tl_preconditioner_type == TL_PREC_JAC_BLOCK) {
         std::cerr <<"read_input: " << "Unable to use nonstandard halo depth with block jacobi preconditioner";
+        std::cout <<"read_input: " << "Unable to use nonstandard halo depth with block jacobi preconditioner";
+
+        tea_abort();
     }
 
     if (parallel.boss) {

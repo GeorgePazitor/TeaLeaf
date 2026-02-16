@@ -39,5 +39,21 @@ namespace TeaLeaf {
         const std::vector<double>& Ky, const std::vector<double>& Di, 
         double rx, double ry);
 
+    void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
+        std::vector<double>& cp, std::vector<double>& bfp,
+        const std::vector<double>& Ky, const std::vector<double>& Di,
+        double ry);
+
+    void tea_block_solve(int x_min, int x_max, int y_min, int y_max, int halo,
+        const std::vector<double>& r, std::vector<double>& z,
+        const std::vector<double>& cp, const std::vector<double>& bfp,
+        const std::vector<double>& Kx, const std::vector<double>& Ky,
+        const std::vector<double>& Di, double rx, double ry);
+
+    void tea_diag_solve(int x_min, int x_max, int y_min, int y_max, int halo, int axis,
+        const std::vector<double>& r, std::vector<double>& z,
+        const std::vector<double>& Mi);
+
+
 } // namespace TeaLeaf
 

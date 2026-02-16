@@ -8,7 +8,7 @@
 namespace TeaLeaf {
 
 #define IDX(j, k) (((k) - y_min + halo) * x_inc + ((j) - x_min + halo))
-
+#define IDX_NO_HALO(j, k) (((k) - y_min) * no_halo_width + ((j) - x_min))
 // --- DIAG PRECONDITIONER (JACOBI) ---
 /**
  * Initializes the diagonal preconditioner (Mi), 
@@ -37,22 +37,30 @@ void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
                     const std::vector<double>& Ky, const std::vector<double>& Di,
                     double ry) {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
-    const int jac_block_size = 4; // Sub-division of the block size
+    const int no_halo_width = (x_max - x_min + 1);
 
+    const int jac_block_size = 4; //sub-division of the block size 
+
+    #pragma omp parallel for 
     for (int ko = y_min; ko <= y_max; ko += jac_block_size) {
         int bottom = ko;
         int top = std::min(ko + jac_block_size - 1, y_max);
 
         for (int j = x_min; j <= x_max; ++j) {
             int idx_b = IDX(j, bottom);
-            cp[idx_b] = (-Ky[IDX(j, bottom + 1)] * ry) / Di[idx_b];
+            int nh_idx = IDX_NO_HALO(j, bottom); 
 
-            for (int k = bottom + 1; k <= top; ++k) {
+            cp[nh_idx] = (-Ky[IDX(j, bottom + 1)] * ry) / Di[idx_b];
+        }
+
+        for (int k = bottom + 1; k <= top; ++k) {
+            for (int j = x_min; j <= x_max; ++j){
                 int idx = IDX(j, k);
+                int nh_idx = IDX_NO_HALO(j, k);
                 // bfp stores the reciprocal of the modified diagonal
-                bfp[idx] = 1.0 / (Di[idx] - (-Ky[idx] * ry) * cp[IDX(j, k - 1)]);
+                bfp[nh_idx] = 1.0 / (Di[idx] - (-Ky[idx] * ry) * cp[IDX_NO_HALO(j, k - 1)]);
                 // cp stores the modified upper off-diagonal
-                cp[idx] = (-Ky[IDX(j, k + 1)] * ry) * bfp[idx];
+                cp[nh_idx] = (-Ky[IDX(j, k + 1)] * ry) * bfp[nh_idx];
             }
         }
     }
@@ -61,10 +69,10 @@ void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
 // --- MAIN INITIALIZATION KERNEL ---
 /**
  * The core setup kernel. It:
- * 1 computes initial temperature (u) and conductivity (w).
- * 2 calculates face-centered conductivities (Kx, Ky) using harmonic means.
- * 3 sets boundary conditions (dirichlet vs reflective).
- * 4 forms the matrix diagonal (Di) and the initial residual (r).
+ * computes initial temperature (u) and conductivity (w).
+ * calculates face-centered conductivities (Kx, Ky) using harmonic means.
+ * sets boundary conditions (dirichlet vs reflective).
+ * forms the matrix diagonal (Di) and the initial residual (r).
  */
 void tea_leaf_common_init_kernel(
     int x_min, int x_max, int y_min, int y_max, int halo,
@@ -79,7 +87,7 @@ void tea_leaf_common_init_kernel(
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
 
-    //1  Physical Field Initialization
+    //physical field initialization
     
     for (int k = y_min - halo; k <= y_max + halo; ++k) {
         for (int j = x_min - halo; j <= x_max + halo; ++j) {
@@ -90,7 +98,7 @@ void tea_leaf_common_init_kernel(
         }
     }
 
-    //2 compute face conductivities (harmonic mean)
+    //compute face conductivities (harmonic mean)
     // K values are defined at cell faces between neighbors.
     for (int k = y_min - halo + 1; k <= y_max + halo; ++k) {
         for (int j = x_min - halo + 1; j <= x_max + halo; ++j) {
@@ -104,7 +112,7 @@ void tea_leaf_common_init_kernel(
         }
     }
 
-    //3 applies external boundary conditions
+    //applies external boundary conditions
     // if not reflective (dirichlet) zero out the transmission coefficients at the boundary.
     if (!reflective_boundary) {
         if (zero_boundary[0]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_min, k)] = 0.0;
@@ -113,7 +121,7 @@ void tea_leaf_common_init_kernel(
         if (zero_boundary[3]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_max+1)] = 0.0;
     }
 
-    //4 matrix main diagonal construction (Di)
+    //matrix main diagonal construction (Di)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -122,14 +130,14 @@ void tea_leaf_common_init_kernel(
         }
     }
 
-    //5 setup preconditioners (Optional depending on solver choice)
+    //setup preconditioners (Optional depending on solver choice)
     if (preconditioner_type == TL_PREC_JAC_DIAG) {
         tea_diag_init(x_min, x_max, y_min, y_max, halo, Mi, Di);
     } else if (preconditioner_type == TL_PREC_JAC_BLOCK) {
         tea_block_init(x_min, x_max, y_min, y_max, halo, cp, bfp, Ky, Di, ry);
     }
 
-    // 6. initial residual calculation: r = b - Au
+    //initial residual calculation: r = b - Au
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -201,6 +209,62 @@ void tea_leaf_kernel_finalise(
     }
 }
 
+void tea_diag_solve(int x_min, int x_max, int y_min, int y_max, int halo, int axis,
+                    const std::vector<double>& r, std::vector<double>& z,
+                    const std::vector<double>& Mi) 
+{
+    const int x_inc = (x_max - x_min + 1) + 2 * halo;
+    for (int k = y_min; k <= y_max; ++k) {
+        for (int j = x_min; j <= x_max; ++j) {
+            int idx = IDX(j, k);
+            z[idx] = Mi[idx] * r[idx];
+        }
+    }
+}
+
+void tea_block_solve(int x_min, int x_max, int y_min, int y_max, int halo,
+                    const std::vector<double>& r, std::vector<double>& z,
+                    const std::vector<double>& cp, const std::vector<double>& bfp,
+                    const std::vector<double>& Kx, const std::vector<double>& Ky,
+                    const std::vector<double>& Di, double rx, double ry) 
+{
+    const int x_inc = (x_max - x_min + 1) + 2 * halo;
+    const int no_halo_width = (x_max - x_min + 1);
+
+    const int jac_block_size = 4; 
+
+    //forward substitution - Thomas algorithm
+    #pragma omp parallel for
+    for (int ko = y_min; ko <= y_max; ko += jac_block_size) {
+        int bottom = ko;
+        int top = std::min(ko + jac_block_size - 1, y_max);
+
+        //forward substitution
+        for (int k = bottom; k <= top; ++k) {
+            for (int j = x_min; j <= x_max; ++j) {
+                int idx = IDX(j, k);
+                int nh_idx = IDX_NO_HALO(j, k); 
+                if (k == bottom) {
+                    z[idx] = r[idx] / Di[idx]; // FIX: Correct mathematical initialization
+                } else {
+                    z[idx] = bfp[nh_idx] * (r[idx] - (-Ky[idx] * ry) * z[IDX(j, k - 1)]);
+                }
+            }
+        }
+
+        //backward substitution
+        for (int k = top - 1; k >= bottom; --k) {
+            for (int j = x_min; j <= x_max; ++j) {
+                int idx = IDX(j, k);
+                int nh_idx = IDX_NO_HALO(j, k); 
+
+                z[idx] -= cp[nh_idx] * z[IDX(j, k + 1)];
+            }
+        }
+    }
+}
+
 #undef IDX
+#undef IDX_NO_HALO
 
 } // namespace TeaLeaf

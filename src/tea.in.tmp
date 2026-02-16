@@ -14,10 +14,8 @@ initial_timestep=0.004
 end_step=10
 tl_max_iters=500
 test_problem 4
-tl_use_jacobi
+tl_use_cg
 tl_eps=1.0e-15
-tl_preconditioner_type=none
-halo_depth=2
+tl_preconditioner_type=jac_block
 summary_frequency=1
-visit_frequency=1
 *endtea

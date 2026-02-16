@@ -11,8 +11,7 @@ Add a macro handler to unify the way fields are accessed and widths are computed
 
 what is coearse solve acceleraition, what are used for the variables in definitions
 
-VTK visualisation tool ? 
-
+Icrease parallelisation in cg kernels and common kernels
 --
 
 For the moment and because we haven't much time, I suggest we should only implement Jacobi, which is the simplest method.

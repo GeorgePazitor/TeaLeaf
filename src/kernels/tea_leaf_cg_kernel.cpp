@@ -2,19 +2,9 @@
 #include <vector>
 #include "include/data.h"
 #include "include/definitions.h"
+#include "include/kernels/tea_leaf_common_kernel.h"
 namespace TeaLeaf {
 
-
-/*void tea_block_solve(int x_min, int x_max, int y_min, int y_max, int halo_depth,
-                     const std::vector<double>& r, std::vector<double>& z,
-                     const std::vector<double>& cp, const std::vector<double>& bfp,
-                     const std::vector<double>& Kx, const std::vector<double>& Ky,
-                     const std::vector<double>& Di, double rx, double ry);
-
-void tea_diag_solve(int x_min, int x_max, int y_min, int y_max, int halo_depth, int step,
-                    const std::vector<double>& r, std::vector<double>& z,
-                    const std::vector<double>& Mi);
-*/
 
 void tea_leaf_cg_init_kernel(
                 int x_min, int x_max, int y_min, int y_max,
@@ -36,6 +26,7 @@ void tea_leaf_cg_init_kernel(
 
     double local_rro = 0.0;
 
+    #pragma omp parallel for collapse(2) 
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             p[IDX(j, k)] = 0.0;
@@ -43,7 +34,7 @@ void tea_leaf_cg_init_kernel(
         }
     }
 
-    /*if (preconditioner_type != TL_PREC_NONE) {
+    if (preconditioner_type != TL_PREC_NONE) {
         if (preconditioner_type == TL_PREC_JAC_BLOCK) {
             tea_block_solve(x_min, x_max, y_min, y_max, halo_depth, r, z, cp, bfp, Kx, Ky, Di, rx, ry);
         } 
@@ -51,21 +42,23 @@ void tea_leaf_cg_init_kernel(
             tea_diag_solve(x_min, x_max, y_min, y_max, halo_depth, 0, r, z, Mi);
         }
 
+        #pragma omp parallel for collapse(2) 
         for (int k = y_min; k <= y_max; ++k) {
             for (int j = x_min; j <= x_max; ++j) {
                 p[IDX(j, k)] = z[IDX(j, k)];
             }
         }
-        } else {*/
+        } else {
         
+        #pragma omp parallel for collapse(2) 
         for (int k = y_min; k <= y_max; ++k) {
             for (int j = x_min; j <= x_max; ++j) {
                 p[IDX(j, k)] = r[IDX(j, k)];
             }
         }
-    //}
+    }
 
-    
+    #pragma omp parallel for collapse(2) reduction(+:local_rro)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             local_rro += r[IDX(j, k)] * p[IDX(j, k)];
@@ -91,7 +84,7 @@ void tea_leaf_cg_calc_w_kernel(
     #define IDX(j, k) (((k) - y_min + halo_depth) * x_width + ((j) - x_min + halo_depth))
 
     double local_pw = 0.0;
-
+    #pragma omp parallel for collapse(2) reduction(+:local_pw)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             //matrix-vector product
@@ -131,8 +124,9 @@ void tea_leaf_cg_calc_ur_kernel(
 
     double local_rrn = 0.0;
 
-    /*if (preconditioner_type != TL_PREC_NONE) {
+    if (preconditioner_type != TL_PREC_NONE) {
         if (preconditioner_type == TL_PREC_JAC_DIAG) {
+            #pragma omp parallel for collapse(2) reduction(+:local_rrn)
             for (int k = y_min; k <= y_max; ++k) {
                 for (int j = x_min; j <= x_max; ++j) {
                     u[IDX(j, k)] += alpha * p[IDX(j, k)];
@@ -143,6 +137,7 @@ void tea_leaf_cg_calc_ur_kernel(
             }
         } 
         else if (preconditioner_type == TL_PREC_JAC_BLOCK) {
+            #pragma omp parallel for collapse(2) 
             for (int k = y_min; k <= y_max; ++k) {
                 for (int j = x_min; j <= x_max; ++j) {
                     u[IDX(j, k)] += alpha * p[IDX(j, k)];
@@ -152,14 +147,15 @@ void tea_leaf_cg_calc_ur_kernel(
 
             tea_block_solve(x_min, x_max, y_min, y_max, halo_depth, r, z, cp, bfp, Kx, Ky, Di, rx, ry);
 
+            #pragma omp parallel for collapse(2) reduction(+:local_rrn)
             for (int k = y_min; k <= y_max; ++k) {
                 for (int j = x_min; j <= x_max; ++j) {
                     local_rrn += r[IDX(j, k)] * z[IDX(j, k)];
                 }
             }
         }
-    } else {*/
-
+    } else {
+        #pragma omp parallel for collapse(2) reduction(+:local_rrn)
         for (int k = y_min; k <= y_max; ++k) {
             for (int j = x_min; j <= x_max; ++j) {
                 u[IDX(j, k)] += alpha * p[IDX(j, k)];
@@ -167,7 +163,7 @@ void tea_leaf_cg_calc_ur_kernel(
                 local_rrn += r[IDX(j, k)] * r[IDX(j, k)];
             }
         }
-    //}
+    }
 
     error = local_rrn;
     #undef IDX
@@ -185,19 +181,21 @@ void tea_leaf_cg_calc_p_kernel(int x_min, int x_max, int y_min, int y_max,
     const int x_width = (x_max - x_min + 1) + 2 * halo_depth;
     #define IDX(j, k) (((k) - y_min + halo_depth) * x_width + ((j) - x_min + halo_depth))
 
-    /*if (preconditioner_type != TL_PREC_NONE || tl_ppcg_active) {
+    if (preconditioner_type != TL_PREC_NONE || tl_ppcg_active) {
+        #pragma omp parallel for collapse(2) 
         for (int k = y_min; k <= y_max; ++k) {
             for (int j = x_min; j <= x_max; ++j) {
                 p[IDX(j, k)] = z[IDX(j, k)] + beta * p[IDX(j, k)];
             }
         }
-    }else {*/
+    }else {
+        #pragma omp parallel for collapse(2) 
         for (int k = y_min; k <= y_max; ++k) {
             for (int j = x_min; j <= x_max; ++j) {
                 p[IDX(j, k)] = r[IDX(j, k)] + beta * p[IDX(j, k)];
             }
         }
-    //}
+    }
 
     #undef IDX
 }
