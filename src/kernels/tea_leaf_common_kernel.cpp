@@ -9,7 +9,7 @@ namespace TeaLeaf {
 
 #define IDX(j, k) (((k) - y_min + halo) * x_inc + ((j) - x_min + halo))
 #define IDX_NO_HALO(j, k) (((k) - y_min) * no_halo_width + ((j) - x_min))
-// --- DIAG PRECONDITIONER (JACOBI) ---
+// - DIAG PRECONDITIONER (JACOBI) -
 /**
  * Initializes the diagonal preconditioner (Mi), 
  * this is effectively a point-Jacobi step where Mi = 1/Diag(A).
@@ -17,7 +17,9 @@ namespace TeaLeaf {
 void tea_diag_init(int x_min, int x_max, int y_min, int y_max, int halo,
                    std::vector<double>& Mi, const std::vector<double>& Di) {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
-    const double omega = 1.0; // Relaxation factor
+    const double omega = 1.0; //relaxation factor
+
+    #pragma omp parallel for collapse(2)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -26,7 +28,7 @@ void tea_diag_init(int x_min, int x_max, int y_min, int y_max, int halo,
     }
 }
 
-// --- BLOCK PRECONDITIONER (THOMAS ALGORITHM) ---
+// - BLOCK PRECONDITIONER (THOMAS ALGORITHM) -
 /**
  * Sets up the tridiagonal matrix decomposition for block preconditioning,
  * uses a simplified Thomas Algorithm (forward elimination) to store
@@ -46,6 +48,7 @@ void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
         int bottom = ko;
         int top = std::min(ko + jac_block_size - 1, y_max);
 
+        #pragma omp simd
         for (int j = x_min; j <= x_max; ++j) {
             int idx_b = IDX(j, bottom);
             int nh_idx = IDX_NO_HALO(j, bottom); 
@@ -54,6 +57,7 @@ void tea_block_init(int x_min, int x_max, int y_min, int y_max, int halo,
         }
 
         for (int k = bottom + 1; k <= top; ++k) {
+            #pragma omp simd //????
             for (int j = x_min; j <= x_max; ++j){
                 int idx = IDX(j, k);
                 int nh_idx = IDX_NO_HALO(j, k);
@@ -87,49 +91,54 @@ void tea_leaf_common_init_kernel(
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
 
-    //physical field initialization
-    
-    for (int k = y_min - halo; k <= y_max + halo; ++k) {
-        for (int j = x_min - halo; j <= x_max + halo; ++j) {
-            int idx = IDX(j, k);
-            u[idx] = energy[idx] * density[idx]; //temperature/energy relation
-            u0[idx] = u[idx];
-            w[idx] = (coef == RECIP_CONDUCTIVITY) ? (1.0 / density[idx]) : density[idx];
+    #pragma omp parallel 
+    {
+        //physical field initialization
+        #pragma omp parallel for collapse(2)
+        for (int k = y_min - halo; k <= y_max + halo; ++k) {
+            for (int j = x_min - halo; j <= x_max + halo; ++j) {
+                int idx = IDX(j, k);
+                u[idx] = energy[idx] * density[idx]; //temperature/energy relation
+                u0[idx] = u[idx];
+                w[idx] = (coef == RECIP_CONDUCTIVITY) ? (1.0 / density[idx]) : density[idx];
+            }
         }
-    }
 
-    //compute face conductivities (harmonic mean)
-    // K values are defined at cell faces between neighbors.
-    for (int k = y_min - halo + 1; k <= y_max + halo; ++k) {
-        for (int j = x_min - halo + 1; j <= x_max + halo; ++j) {
-            double w1_x = w[IDX(j-1, k)];
-            double w2_x = w[IDX(j, k)];
-            Kx[IDX(j, k)] = (w1_x + w2_x) / (2.0 * w1_x * w2_x);
+        //compute face conductivities (harmonic mean)
+        // K values are defined at cell faces between neighbors.
+        #pragma omp parallel for collapse(2)
+        for (int k = y_min - halo + 1; k <= y_max + halo; ++k) {
+            for (int j = x_min - halo + 1; j <= x_max + halo; ++j) {
+                double w1_x = w[IDX(j-1, k)];
+                double w2_x = w[IDX(j, k)];
+                Kx[IDX(j, k)] = (w1_x + w2_x) / (2.0 * w1_x * w2_x);
 
-            double w1_y = w[IDX(j, k-1)];
-            double w2_y = w[IDX(j, k)];
-            Ky[IDX(j, k)] = (w1_y + w2_y) / (2.0 * w1_y * w2_y);
+                double w1_y = w[IDX(j, k-1)];
+                double w2_y = w[IDX(j, k)];
+                Ky[IDX(j, k)] = (w1_y + w2_y) / (2.0 * w1_y * w2_y);
+            }
         }
-    }
 
-    //applies external boundary conditions
-    // if not reflective (dirichlet) zero out the transmission coefficients at the boundary.
-    if (!reflective_boundary) {
-        if (zero_boundary[0]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_min, k)] = 0.0;
-        if (zero_boundary[1]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_max+1, k)] = 0.0;
-        if (zero_boundary[2]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_min)] = 0.0;
-        if (zero_boundary[3]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_max+1)] = 0.0;
-    }
-
-    //matrix main diagonal construction (Di)
-    for (int k = y_min; k <= y_max; ++k) {
-        for (int j = x_min; j <= x_max; ++j) {
-            int idx = IDX(j, k);
-            Di[idx] = 1.0 + rx * (Kx[IDX(j+1, k)] + Kx[IDX(j, k)])
-                          + ry * (Ky[IDX(j, k+1)] + Ky[IDX(j, k)]);
+        //applies external boundary conditions
+        // if not reflective (dirichlet) zero out the transmission coefficients at the boundary.
+        if (!reflective_boundary) {
+            if (zero_boundary[0]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_min, k)] = 0.0;
+            if (zero_boundary[1]) for(int k=y_min-halo; k<=y_max+halo; ++k) Kx[IDX(x_max+1, k)] = 0.0;
+            if (zero_boundary[2]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_min)] = 0.0;
+            if (zero_boundary[3]) for(int j=x_min-halo; j<=x_max+halo; ++j) Ky[IDX(j, y_max+1)] = 0.0;
         }
-    }
 
+        //matrix main diagonal construction (Di)
+        #pragma omp parallel for collapse(2)
+        for (int k = y_min; k <= y_max; ++k) {
+            for (int j = x_min; j <= x_max; ++j) {
+                int idx = IDX(j, k);
+                Di[idx] = 1.0 + rx * (Kx[IDX(j+1, k)] + Kx[IDX(j, k)])
+                            + ry * (Ky[IDX(j, k+1)] + Ky[IDX(j, k)]);
+            }
+        }
+
+    }
     //setup preconditioners (Optional depending on solver choice)
     if (preconditioner_type == TL_PREC_JAC_DIAG) {
         tea_diag_init(x_min, x_max, y_min, y_max, halo, Mi, Di);
@@ -138,6 +147,7 @@ void tea_leaf_common_init_kernel(
     }
 
     //initial residual calculation: r = b - Au
+    #pragma omp parallel for collapse(2)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -161,6 +171,8 @@ void tea_leaf_calc_residual_kernel(
     double rx, double ry) 
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
+
+    #pragma omp parallel for collapse(2)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -182,6 +194,8 @@ void tea_leaf_calc_2norm_kernel(
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
     double local_norm = 0.0;
+
+    #pragma omp parallel for collapse(2) reduction(+:local_norm)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             double val = arr[IDX(j, k)];
@@ -201,6 +215,8 @@ void tea_leaf_kernel_finalise(
     const std::vector<double>& u) 
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
+
+    #pragma omp parallel for collapse(2)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -214,6 +230,8 @@ void tea_diag_solve(int x_min, int x_max, int y_min, int y_max, int halo, int ax
                     const std::vector<double>& Mi) 
 {
     const int x_inc = (x_max - x_min + 1) + 2 * halo;
+
+    #pragma omp parallel for collapse(2)
     for (int k = y_min; k <= y_max; ++k) {
         for (int j = x_min; j <= x_max; ++j) {
             int idx = IDX(j, k);
@@ -241,6 +259,7 @@ void tea_block_solve(int x_min, int x_max, int y_min, int y_max, int halo,
 
         //forward substitution
         for (int k = bottom; k <= top; ++k) {
+            #pragma omp simd
             for (int j = x_min; j <= x_max; ++j) {
                 int idx = IDX(j, k);
                 int nh_idx = IDX_NO_HALO(j, k); 
@@ -254,6 +273,7 @@ void tea_block_solve(int x_min, int x_max, int y_min, int y_max, int halo,
 
         //backward substitution
         for (int k = top - 1; k >= bottom; --k) {
+            #pragma omp simd
             for (int j = x_min; j <= x_max; ++j) {
                 int idx = IDX(j, k);
                 int nh_idx = IDX_NO_HALO(j, k); 
