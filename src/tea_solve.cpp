@@ -17,7 +17,7 @@ namespace TeaLeaf {
  */
 void tea_leaf() {
     int n = 0;
-    double error = 0.0,  initial_residual = 0.0;
+    double error = 0.0, initial_residual = 0.0;
     std::vector<int> fields(NUM_FIELDS, 0);
 
     std::vector<double> cg_alphas(max_iters, 0);
@@ -27,37 +27,27 @@ void tea_leaf() {
     fields[FIELD_DENSITY] = 1;
     update_halo(fields.data(), chunk.halo_exchange_depth);
     
-    //prepare coefficients for the linear system Ax = b
     tea_leaf_init_common();
 
-    //variables for cg
+    tea_leaf_calc_residual();
+
     double rrn, rro, pw, alpha, beta;
 
-    if(tl_use_cg){
+    if (tl_use_cg) {
         tea_leaf_cg_init(rro);
         tea_allsum(rro);
 
         fields.assign(NUM_FIELDS, 0);
-
-        fields[FIELD_U] = 1;
         fields[FIELD_P] = 1;
-
         update_halo(fields.data(), 1);
-
-        fields.assign(NUM_FIELDS, 0);
-
-        fields[FIELD_P] = 1;
-    }
-    else{// jacobi by default
-
+    } 
+    else { 
         fields.assign(NUM_FIELDS, 0);
         fields[FIELD_U] = 1;
         update_halo(fields.data(), 1);
     }
 
-    tea_leaf_calc_residual();
-    tea_leaf_calc_2norm(1, initial_residual);
-    
+    tea_leaf_calc_2norm(1, initial_residual); // Assuming 1 maps to FIELD_R internally
     tea_allsum(initial_residual);
     initial_residual = std::sqrt(std::abs(initial_residual));
 
@@ -68,8 +58,7 @@ void tea_leaf() {
     for (n = 1; n <= max_iters; ++n) {
         error = 0.0;
 
-        if (tl_use_cg){
-
+        if (tl_use_cg) {
             tea_leaf_cg_calc_w(pw);
             tea_allsum(pw);
 
@@ -86,22 +75,19 @@ void tea_leaf() {
 
             rro = rrn;
             error = rrn;
-        }
-        else {// jacobi by default
-            tea_leaf_jacobi_solve(error);
 
-            tea_allsum(error);
-        }
-        
-        
-        fields.assign(NUM_FIELDS, 0);
-        fields[FIELD_U] = 1;
-
-        if (tl_use_cg) {
+            fields.assign(NUM_FIELDS, 0);
             fields[FIELD_P] = 1;      
+            update_halo(fields.data(), 1);
         }
-        
-        update_halo(fields.data(), 1);
+        else { 
+            tea_leaf_jacobi_solve(error);
+            tea_allsum(error);
+            
+            fields.assign(NUM_FIELDS, 0);
+            fields[FIELD_U] = 1;
+            update_halo(fields.data(), 1);
+        }
 
         error = std::sqrt(std::abs(error));
 

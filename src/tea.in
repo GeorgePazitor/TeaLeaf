@@ -19,15 +19,15 @@ end_step=10
 tl_max_iters=500
 test_problem 4
 tl_use_cg
-tl_use_jacobi
+#tl_use_jacobi
 tl_eps=1.0e-15
 #tl_preconditioner_type=none
 #tl_preconditioner_type=jac_block
 #tl_preconditioner_type=jac_diag
 #halo_depth=1
 #verbose_on
-summary_frequency=1
-#visit_frequency=1
+summary_frequency=10
+visit_frequency=10
 
-
+#reflective_boundary
 *endtea

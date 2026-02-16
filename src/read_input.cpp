@@ -330,6 +330,11 @@ void read_input() {
                 
                 }
             }
+            else if (word == "reflective_boundary") {
+                reflective_boundary = true;
+                if (parallel.boss) *g_out << " reflective_boundary     on\n";
+
+            }
         }
     }
 
