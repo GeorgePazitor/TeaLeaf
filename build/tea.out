@@ -1,0 +1,116 @@
+
+Tea Version       0.1
+Task Count        1
+Thread Count:     12
+
+Output file tea.out opened.
+*tea
+state 1 density=100.0 energy=0.0001
+state 2 density=0.1 energy=25.0 geometry=rectangle xmin=0.0 xmax=1.0 ymin=1.0 ymax=2.0
+state 3 density=0.1 energy=0.1 geometry=rectangle xmin=1.0 xmax=6.0 ymin=1.0 ymax=2.0
+state 4 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=6.0 ymin=1.0 ymax=8.0
+state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0
+
+x_cells=1000
+y_cells=1000
+
+xmin=0.0
+ymin=0.0
+xmax=10.0
+ymax=10.0
+
+initial_timestep=0.004
+end_step=10
+
+tl_max_iters=500
+test_problem 4
+tl_use_cg
+#tl_use_jacobi
+tl_eps=1.0e-15
+#tl_preconditioner_type=none
+#tl_preconditioner_type=jac_block
+#tl_preconditioner_type=jac_diag
+#halo_depth=1
+#verbose_on
+summary_frequency=10
+visit_frequency=10
+
+#reflective_boundary
+*endtea
+
+Initialising and generating
+
+Reading input file
+
+ Reading specification for state 1
+ state density           100
+ state energy            0.0001
+
+ Reading specification for state 2
+ state density           0.1
+ state energy            25
+ state geometry rectangular
+ state xmin              0
+ state xmax              1
+ state ymin              1
+ state ymax              2
+
+ Reading specification for state 3
+ state density           0.1
+ state energy            0.1
+ state geometry rectangular
+ state xmin              1
+ state xmax              6
+ state ymin              1
+ state ymax              2
+
+ Reading specification for state 4
+ state density           0.1
+ state energy            0.1
+ state geometry rectangular
+ state xmin              5
+ state xmax              6
+ state ymin              1
+ state ymax              8
+
+ Reading specification for state 5
+ state density           0.1
+ state energy            0.1
+ state geometry rectangular
+ state xmin              5
+ state xmax              10
+ state ymin              7
+ state ymax              8
+
+ x_cells                 1000
+ y_cells                 1000
+ xmin                    0
+ ymin                    0
+ xmax                    10
+ ymax                    10
+ initial_timestep        0.004
+ end_step                10
+ test_problem            4
+ summary_frequency       10
+ visit_frequency         10
+ tiles per task          12
+
+
+ Input read finished.
+
+Setting up initial geometry
+
+ Mesh ratio of 1
+ Decomposing the mesh into 1 by 1 chunks
+ Tile size 334 by 250 cells 
+ Sub-tile size ranges from 333 by 250 cells to 334 by 250 cells 
+ Generating chunk 
+ 
+ Problem initialized and generated 
+
+ Time 0
+                                 Volume                      Mass                   Density                    Energy                         U
+ step:       0   9.99999999999269988e+01   8.40159999999132197e+03   8.40159999999745537e+01   3.49000000000305599e+00   8.42649999999631660e+01
+
+Starting the calculation
+ Step       1 time   0.0000000 timestep   4.00e-03
