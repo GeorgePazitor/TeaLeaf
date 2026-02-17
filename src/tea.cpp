@@ -74,6 +74,9 @@ void tea_decompose(int x_cells, int y_cells) {
     chunk.top = chunk.bottom + delta_y - 1;
     if (mpi_coords[1] < mod_y) chunk.top++;
 
+    chunk.x_cells = chunk.right - chunk.left + 1;
+    chunk.y_cells = chunk.top - chunk.bottom + 1;
+
     if (parallel.boss) {
         *g_out << "\n Mesh ratio of " << (double)x_cells/y_cells << "\n";
         *g_out << " Decomposing the mesh into " << chunk_x << " by " << chunk_y << " chunks\n";
@@ -282,5 +285,8 @@ void tea_send_recv_message_bottom(double* snd_buf, double* rcv_buf, int size, in
 void tea_finalize() {
     std::cout.flush();
     std::cerr.flush();
+    if (mpi_cart_comm != MPI_COMM_NULL) {
+        MPI_Comm_free(&mpi_cart_comm);
+    }
     MPI_Finalize();
 }

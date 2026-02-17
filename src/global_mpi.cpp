@@ -13,6 +13,9 @@ void tea_sum(double& value) {
     MPI_Reduce(&value, &total, 1, MPI_DOUBLE, MPI_SUM, 0, mpi_cart_comm);
 
     // note 'total' is only valid on rank 0 after this call
+    if (parallel.boss) {
+        value = total;
+    }
 }
 
 

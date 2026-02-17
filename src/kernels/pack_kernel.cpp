@@ -2,8 +2,8 @@
 using namespace TeaLeaf;
 
 //handle 1D indexing for 2D grids in row-major order
-#define GET_IDX(x, y, stride) ((y) * (stride) + (x))
-
+//#define GET_IDX(x, y, stride) ((y) * (stride) + (x))
+#define GET_IDX(j, k, stride) (((k) - y_min + halo) * stride + ((j) - x_min + halo))
 
 //offset adjustment for y dimension based on data centering
 
@@ -103,8 +103,8 @@ void tea_pack_message_left(int x_min, int x_max, int y_min, int y_max, int halo,
     #pragma omp for nowait
     for (int k = y_min - e_minus; k <= y_max + y_inc + e_plus; ++k) {
         for (int j = 1; j <= depth; ++j) {
-            int index = buf_off + j + (k + depth - 1) * depth; 
-            buf[index - 1] = field[GET_IDX(x_min + x_inc - 1 + j, k, stride)]; 
+            int index = buf_off + (k - (y_min - e_minus)) * depth + (j - 1);
+            buf[index] = field[GET_IDX(x_min + x_inc - 1 + j, k, stride)]; 
         }
     }
 }
@@ -114,8 +114,8 @@ void tea_unpack_message_left(int x_min, int x_max, int y_min, int y_max, int hal
     #pragma omp for nowait
     for (int k = y_min - e_minus; k <= y_max + y_inc + e_plus; ++k) {
         for (int j = 1; j <= depth; ++j) {
-            int index = buf_off + j + (k + depth - 1) * depth;
-            field[GET_IDX(x_min - j, k, stride)] = buf[index - 1];
+            int index = buf_off + (k - (y_min - e_minus)) * depth + (j - 1);
+            field[GET_IDX(x_min - j, k, stride)] = buf[index];
         }
     }
 }
@@ -125,8 +125,8 @@ void tea_pack_message_right(int x_min, int x_max, int y_min, int y_max, int halo
     #pragma omp for nowait
     for (int k = y_min - e_minus; k <= y_max + y_inc + e_plus; ++k) {
         for (int j = 1; j <= depth; ++j) {
-            int index = buf_off + j + (k + depth - 1) * depth;
-            field[GET_IDX(x_max + 1 - j, k, stride)] = buf[index - 1];
+            int index = buf_off + (k - (y_min - e_minus)) * depth + (j - 1);
+            buf[index] = field[GET_IDX(x_max + 1 - j, k, stride)];
         }
     }
 }
@@ -136,52 +136,56 @@ void tea_unpack_message_right(int x_min, int x_max, int y_min, int y_max, int ha
     #pragma omp for nowait
     for (int k = y_min - e_minus; k <= y_max + y_inc + e_plus; ++k) {
         for (int j = 1; j <= depth; ++j) {
-            int index = buf_off + j + (k + depth - 1) * depth;
-            field[GET_IDX(x_max + x_inc + j, k, stride)] = buf[index - 1];
+            int index = buf_off + (k - (y_min - e_minus)) * depth + (j - 1);
+            field[GET_IDX(x_max + x_inc + j, k, stride)] = buf[index];
         }
     }
 }
 
 void tea_pack_message_top(int x_min, int x_max, int y_min, int y_max, int halo, double* field, double* buf, int depth, int x_inc, int y_inc, int buf_off, int e_minus, int e_plus) {
     int stride = (x_max + halo) - (x_min - halo) + 1;
+    int width = (x_max + x_inc + e_plus) - (x_min - e_minus) + 1;
     #pragma omp for nowait
     for (int k = 1; k <= depth; ++k) {
         for (int j = x_min - e_minus; j <= x_max + x_inc + e_plus; ++j) {
-            int index = buf_off + j + e_minus + (k - 1) * (x_max + x_inc + (e_plus + e_minus));
-            buf[index - 1] = field[GET_IDX(j, y_max + 1 - k, stride)];
+            int index = buf_off + (k - 1) * width + (j - (x_min - e_minus));
+            buf[index] = field[GET_IDX(j, y_max + 1 - k, stride)];
         }
     }
 }
 
 void tea_unpack_message_top(int x_min, int x_max, int y_min, int y_max, int halo, double* field, double* buf, int depth, int x_inc, int y_inc, int buf_off, int e_minus, int e_plus) {
     int stride = (x_max + halo) - (x_min - halo) + 1;
+    int width = (x_max + x_inc + e_plus) - (x_min - e_minus) + 1;
     #pragma omp for nowait
     for (int k = 1; k <= depth; ++k) {
         for (int j = x_min - e_minus; j <= x_max + x_inc + e_plus; ++j) {
-            int index = buf_off + j + e_minus + (k - 1) * (x_max + x_inc + (e_plus + e_minus));
-            field[GET_IDX(j, y_max + y_inc + k, stride)] = buf[index - 1];
+            int index = buf_off + (k - 1) * width + (j - (x_min - e_minus));
+            field[GET_IDX(j, y_max + y_inc + k, stride)] = buf[index];
         }
     }
 }
 
 void tea_pack_message_bottom(int x_min, int x_max, int y_min, int y_max, int halo, double* field, double* buf, int depth, int x_inc, int y_inc, int buf_off, int e_minus, int e_plus) {
     int stride = (x_max + halo) - (x_min - halo) + 1;
+    int width = (x_max + x_inc + e_plus) - (x_min - e_minus) + 1;
     #pragma omp for nowait
     for (int k = 1; k <= depth; ++k) {
         for (int j = x_min - e_minus; j <= x_max + x_inc + e_plus; ++j) {
-            int index = buf_off + j + e_minus + (k - 1) * (x_max + x_inc + (e_plus + e_minus));
-            buf[index - 1] = field[GET_IDX(j, y_min + y_inc - 1 + k, stride)];
+            int index = buf_off + (k - 1) * width + (j - (x_min - e_minus));
+            buf[index] = field[GET_IDX(j, y_min + y_inc - 1 + k, stride)];
         }
     }
 }
 
 void tea_unpack_message_bottom(int x_min, int x_max, int y_min, int y_max, int halo, double* field, double* buf, int depth, int x_inc, int y_inc, int buf_off, int e_minus, int e_plus) {
     int stride = (x_max + halo) - (x_min - halo) + 1;
+    int width = (x_max + x_inc + e_plus) - (x_min - e_minus) + 1;
     #pragma omp for nowait
     for (int k = 1; k <= depth; ++k) {
         for (int j = x_min - e_minus; j <= x_max + x_inc + e_plus; ++j) {
-            int index = buf_off + j + e_minus + (k - 1) * (x_max + x_inc + (e_plus + e_minus));
-            field[GET_IDX(j, y_min - k, stride)] = buf[index - 1];
+            int index = buf_off + (k - 1) * width + (j - (x_min - e_minus));
+            field[GET_IDX(j, y_min - k, stride)] = buf[index];
         }
     }
 }

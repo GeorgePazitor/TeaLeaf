@@ -33,6 +33,10 @@ void call_packing_functions(const int* fields, int depth, int face, bool packing
                 case CHUNK_LEFT:
                 case CHUNK_RIGHT:
                     tile_offset = (chunk.tiles[t].bottom - chunk.bottom) * depth;
+                    
+                    if (tile_offset != 0) {
+                        tile_offset += (depth * depth);
+                    }
                     break;
                 
                 case CHUNK_BOTTOM:
